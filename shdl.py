@@ -20,20 +20,16 @@ parser.add_argument("--version", "-V",
                     version="%(prog)s v0.4.1 by KAC")
 parser.add_argument("doi",
                     type=str,
-                    # nargs='*',  # to deal with space in doi
                     help="The DOI string of the document. "
                     "If the string contains spaces, it must be quoted")
 parser.add_argument("--proxy",
                     type=str,
-                    # default="socks5h://127.0.0.1:9150",
                     help="Requests-type proxy argument. "
                     "Used for both HTTP and HTTPS. "
                     "Use socks5h://127.0.0.1:9150 "
                     "for TOR browser socks5 proxy. "
-                    # "Pass an empty string to disable proxy. "
                     "Default: "
                     "no proxy"
-                    # "socks5h://127.0.0.1:9150"
                     )
 parser.add_argument("--mirror", '-m',
                     type=str,
@@ -137,7 +133,7 @@ def sanitizeString(s: str) -> str:
         s
         .translate(str.maketrans({k: '' for k in '/<>:\"\\|?*'}))
         .translate(str.maketrans({'’': '\''}))
-    ).encode('ASCII', 'ignore')
+    ).encode('ASCII', 'ignore').decode()
 
 
 if args.dir is None:
@@ -157,6 +153,12 @@ verbosePrint(f"Download directory: {str(args.dir)}")
 if args.mirror is None:
     # apply default
     args.mirror = ("https://sci-hub.se/", )
+else:
+    args.mirror = tuple(
+        # enforce https if not specified
+        urlunparse(urlparse(mirrorURL, scheme="https"))
+        for mirrorURL in args.mirror
+    )
 
 proxyDict = {'http': args.proxy, 'https': args.proxy} \
     if (args.proxy is not None and args.proxy != "") \
@@ -219,13 +221,6 @@ if args.autoname:
                                  metaDict['title'].strip(' ,."\'')))
     )
     print("Autopatched title: " + autoPatchedName)
-    # verbosePrint("Checking if autopatched title is in ASCII ...")
-    # try:
-    #     autoPatchedName.encode('ASCII')
-    # except UnicodeEncodeError:
-    #     print("Autopatched name is not an ASCII string. "
-    #           "Using remote name")
-    #     args.autoname = False
 
 # TODO check if different mirrors have different response link
 # TODO find better regex pattern
@@ -269,8 +264,7 @@ def tryFetchDocFromSciHubMirror(mirrorURL: str, docDOI: str) -> bool:
             dlURL = urlunparse(
                 urlparse(rePattern.search(line).group(1)
                          .replace(r'\\', '\\').replace(r'\/', '/'),
-                         scheme="https",
-                         allow_fragments=False)
+                         scheme="https")
             ).rsplit("#")[0]
             verbosePrint(f"Link found: {dlURL}")
             possibleDLLinkLst.append(dlURL)
