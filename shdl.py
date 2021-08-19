@@ -4,10 +4,14 @@ import re
 from argparse import ArgumentParser as aAP
 from urllib.parse import urljoin, urlunparse, urlparse
 import pathlib
+# for filename normalization
 # TODO use unidecode instead?
 from unicodedata import normalize as ucNormalize
 # for arxiv metadata parsing
 from xml.etree import ElementTree as eTree
+# for type hint
+from typing import BinaryIO, Union
+from collections.abc import Callable
 
 parser = aAP(description="A simple script for downloading files from Sci-Hub",
              epilog="This script works by parsing the response "
@@ -69,7 +73,6 @@ parser.add_argument("--useragent",
                     "but you can find the requested papers on the website, "
                     "try changing this. "
                     "Default: "
-                    "(TOR Browser on Win10 x64) "
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) "
                     "Gecko/20100101 Firefox/78.0")
 parser.add_argument("--autoname",
@@ -90,6 +93,7 @@ args = parser.parse_args()
 # 2: argument error
 # 3: cannot connect to internet
 # 4: query string invalid
+# 5: cannot fetch file
 
 
 def humanByteUnitString(s: int) -> str:
@@ -109,10 +113,10 @@ def verbosePrint(msg: str,
 
 
 def transformToAuthorStr(authorList: tuple[tuple[str]]) -> str:
-    # (given name, family name)
+    # authorList assumed (given name, family name)
     return ', '.join(''.join((gNamePart
-                              if len(gNamePart) <= 1
-                              else gNamePart[0] + '.')
+                              if len(gNamePart) <= 1 or not gNamePart.isalpha()
+                              else (gNamePart[0] + '.'))
                              for gNamePart
                              in re.split(r'\b', authorNameTuple[0]))
                      + ' '
@@ -170,7 +174,8 @@ def checkMetaInfoResponseValidity(res: rq.Response, metaType: str) -> bool:
         raise ValueError(f"Unknown metaType {metaType}")
 
 
-def getMetaInfoFromResponse(res: rq.Response, metaType: str) -> tuple:
+def getMetaInfoFromResponse(res: rq.Response,
+                            metaType: str) -> tuple[tuple[str], str]:
     if metaType == 'doi':
         metaDict = res.json()
         return (
@@ -182,10 +187,10 @@ def getMetaInfoFromResponse(res: rq.Response, metaType: str) -> tuple:
         aStr = '{http://www.w3.org/2005/Atom}'
         xmlEntryRoot = eTree.fromstring(res.text).find(f'{aStr}entry')
         return (
-            tuple(tuple(ele.text.rsplit(' '))
+            tuple(tuple(ele.text.rsplit(' ', 1))
                   for ele
                   in xmlEntryRoot.findall(f'{aStr}author/{aStr}name')),
-            xmlEntryRoot.find(f'{aStr}title')
+            re.sub('\\n|\\s{2,}', '', xmlEntryRoot.find(f'{aStr}title').text)
         )
     else:
         raise ValueError(f"Unknown metaType {metaType}")
@@ -247,10 +252,10 @@ queryType = next((qType for qType in ('doi', 'arxiv')
                   if qType in args.doi.lower()),
                  None)
 if queryType is None:
-    print("Cannot parse decide repo type")
+    print("Cannot decide repo type")
     quit(4)
 verbosePrint(f"Query string type: {queryType}")
-rgxExtractPattern, metaQueryURL, reqHeader = {
+reDOISanitizePattern, metaQueryURL, reqHeader = {
     'doi': (
         '^(https?://)?(dx\\.|www\\.)?doi(\\.org/|:|/)\\s*',
         'https://doi.org/{id}',
@@ -263,16 +268,16 @@ rgxExtractPattern, metaQueryURL, reqHeader = {
     )
 }.get(queryType)
 
-args.doi = re.sub(rgxExtractPattern,
+args.doi = re.sub(reDOISanitizePattern,
                   '',
                   args.doi.strip(),
-                  re.IGNORECASE)
+                  flags=re.IGNORECASE)
+verbosePrint(f"Sanitized query: {args.doi}")
 metaQueryRes = rq.get(metaQueryURL.format(id=args.doi),
                       headers=reqHeader)
 if not checkMetaInfoResponseValidity(metaQueryRes, queryType):
     print(f"Fail to resolve input query \"{args.doi}\"")
     quit(4)
-verbosePrint(f"Input query: {args.doi}")
 
 if args.output is None and args.autoname:
     metaDataTuple = getMetaInfoFromResponse(metaQueryRes, queryType)
@@ -284,21 +289,77 @@ if args.output is None and args.autoname:
     print("Autopatched title: " + args.output)
 
 
+def getTargetFileHandle(
+    dlDir: pathlib.Path,
+    targetURL: str,
+    decidedFilename: Union[None, str]
+) -> Union[BinaryIO, bool]:
+    if decidedFilename is None:
+        decidedFilename = urlparse(targetURL).path.rsplit('/', 1)[-1]
+    else:
+        decidedFilename = decidedFilename + '.' + targetURL.rsplit('.', 1)[-1]
+    dlPath = dlDir / decidedFilename
+    if len(str(dlPath)) >= 250:
+        print("Cannot download to path exceeding 250 characters")
+        return False
+    verbosePrint(f"Downloading to {str(dlPath)}")
+    try:
+        fHandle = dlPath.open('wb')
+    except (PermissionError, FileNotFoundError):
+        # TODO better handling of exceptions
+        print(f"Cannot write to target path \"{str(dlPath)}\"")
+        return False
+    return fHandle
+
+
+def downloadFileToPath(targetURL: str,
+                       openedFileHandle: BinaryIO,
+                       rqGetKwargDict: dict) -> bool:
+    # assumed openedFileHandle is opened and valid for writing
+    # openedFileHandle is automatically closed
+    # TODO exception handling?
+    downloadedSize = 0
+    lastLineLen = 0
+    dlMsg = None
+    verbosePrint(f"Downloading from {targetURL} ...")
+    with rq.get(targetURL, stream=True, **rqGetKwargDict) as dlResponse:
+        fileSize = dlResponse.headers.get('Content-Length', None)
+        if fileSize is not None:
+            fileSize = int(fileSize)
+            print("File size: " + humanByteUnitString(fileSize))
+        else:
+            print("File size unknown")
+        with openedFileHandle:
+            for dataChunk in dlResponse.iter_content(chunk_size=args.chunk):
+                openedFileHandle.write(dataChunk)
+                downloadedSize += len(dataChunk)
+                if fileSize is not None:
+                    dlMsg = "Downloaded " \
+                        + f"{downloadedSize / fileSize * 100 :.2f}%"
+                else:
+                    dlMsg = "Downloaded " \
+                        + humanByteUnitString(downloadedSize)
+                print(dlMsg, end='')
+                lenDLMsg = len(dlMsg)
+                print(" " * (lastLineLen - lenDLMsg), end='\r')
+                lastLineLen = lenDLMsg
+    print("\nDownload done")
+    return True
+
+
+def getArXivRecordURL(identifierStr: str, mirrorURL: str) -> str:
+    # TODO check if alright
+    return urljoin(mirrorURL, identifierStr + '.pdf')
+
+
 # TODO check if different mirrors have different response link
 # TODO find better regex pattern
-rePatternForMirror = re.compile(
+reDOIExtractPattern = re.compile(
     "\"location\\.href=.?'(.+?)\\?.*?download=true"
 )
 
 
-def fetchFileFromArXiv():
-    # TODO find dl link from e.g. response xml
-    pass
-
-
-# TODO do not ref global var?
-def tryFetchRecordFromMirror(mirrorURL: str,
-                             docDOI: str) -> bool:
+def getDOIRecordURL(identifierStr: str, mirrorURL: str) -> str:
     verbosePrint("Checking if mirror is online ...")
     try:
         if rq.get(mirrorURL,
@@ -313,9 +374,9 @@ def tryFetchRecordFromMirror(mirrorURL: str,
     except rq.exceptions.ConnectionError:
         print(f"Cannot connect to {mirrorURL}")
         return False
-
-    verbosePrint("Querying " + urljoin(mirrorURL, docDOI) + " ...")
-    firstResponse = rq.get(urljoin(mirrorURL, docDOI),
+    # query mirror
+    verbosePrint("Querying " + urljoin(mirrorURL, identifierStr) + " ...")
+    firstResponse = rq.get(urljoin(mirrorURL, identifierStr),
                            proxies=proxyDict,
                            headers={'User-Agent': args.useragent})
     # TODO better method of checking first return
@@ -323,7 +384,7 @@ def tryFetchRecordFromMirror(mirrorURL: str,
             or len(firstResponse.text.strip('\n ')) == 0:
         print("Empty response. Maybe no search result?")
         return False
-
+    # extract download link
     verbosePrint("Findind download link from response ...")
     possibleDLLinkLst = list()
     for line in firstResponse.text.splitlines():
@@ -333,7 +394,7 @@ def tryFetchRecordFromMirror(mirrorURL: str,
         if 'download=true' in line:
             verbosePrint(line, 2)
             dlURL = urlunparse(
-                urlparse(rePatternForMirror.search(line).group(1)
+                urlparse(reDOIExtractPattern.search(line).group(1)
                          .replace(r'\\', '\\').replace(r'\/', '/'),
                          scheme="https")
             ).rsplit("#")[0]
@@ -351,57 +412,39 @@ def tryFetchRecordFromMirror(mirrorURL: str,
             print(lnk)
         print("Using only the first link")
         possibleDLLinkLst = possibleDLLinkLst[:1]
-    docURL = possibleDLLinkLst[0]
+    return possibleDLLinkLst[0]
 
-    verbosePrint(f"Downloading from {docURL} ...")
-    dlFilename = None
-    if args.output is None:
-        dlFilename = urlparse(docURL).path.rsplit('/', 1)[-1]
+
+def fetchRecFromMirror(recIdentifier: str,
+                       mirrorURL: str,
+                       recURLFetcher: Callable[str, str],
+                       rqGetKwargDict: dict) -> bool:
+    docURL = recURLFetcher(recIdentifier, mirrorURL)
+    fileHandle = getTargetFileHandle(args.dir,
+                                     docURL,
+                                     args.output)
+    if fileHandle is False:
+        quit(1)
     else:
-        dlFilename = args.output + '.' + dlFilename.rsplit('.', 1)[-1]
-    dlTargetPath = args.dir / dlFilename
-    verbosePrint(f"Downloading to {str(dlTargetPath)}")
-    downloadedSize = 0
-    lastLineLen = 0
-    dlMsg = None
-    try:
-        fileHandle = dlTargetPath.open('wb')
-    except PermissionError:
-        # TODO better handling of exceptions
-        print(f"Cannot write to target path \"{str(dlTargetPath)}\"")
-        return False
-    with rq.get(docURL,
-                proxies=proxyDict,
-                stream=True,
-                headers={'User-Agent': args.useragent}) as dlResponse:
-        fileSize = dlResponse.headers.get('Content-Length', None)
-        if fileSize is not None:
-            fileSize = int(fileSize)
-            print("File size: " + humanByteUnitString(fileSize))
-        else:
-            print("File size unknown")
-        with fileHandle:
-            for dataChunk in dlResponse.iter_content(chunk_size=args.chunk):
-                fileHandle.write(dataChunk)
-                downloadedSize += len(dataChunk)
-                if fileSize is not None:
-                    dlMsg = "Downloaded " \
-                        + f"{downloadedSize / fileSize * 100 :.2f}%"
-                else:
-                    dlMsg = "Downloaded " \
-                        + humanByteUnitString(downloadedSize)
-                print(dlMsg, end='')
-                lenDLMsg = len(dlMsg)
-                print(" " * (lastLineLen - lenDLMsg), end='\r')
-                lastLineLen = lenDLMsg
-    print("\nDownload done")
-    return True
+        return downloadFileToPath(docURL,
+                                  fileHandle,
+                                  rqGetKwargDict)
 
 
-if queryType == 'doi' \
-    and not any(tryFetchRecordFromMirror(mirrorURL, args.doi)
-                for mirrorURL
-                in args.mirror):
-    print("Download failed: no mirror seems to have this document")
+if queryType == 'doi':
+    if not any(fetchRecFromMirror(args.doi,
+                                  mirrorURL,
+                                  getDOIRecordURL,
+                                  {'proxies': proxyDict,
+                                   'headers': {'User-Agent': args.useragent}})
+               for mirrorURL
+               in args.mirror):
+        print("Download failed: no mirror seems to have this document")
+        quit(5)
 elif queryType == 'arxiv':
-    fetchFileFromArXiv()
+    if not fetchRecFromMirror(args.doi,
+                              'https://arxiv.org/pdf/',
+                              getArXivRecordURL,
+                              {}):
+        print("Download failed: unable to fetch this document from arXiv")
+        quit(5)

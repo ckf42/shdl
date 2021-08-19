@@ -68,22 +68,29 @@ Will always use HTTPS if not specified
 
 ## TODO
 
-* Features
-    * Support for arXiv
-    * Support for PMID
-    * Direct search with e.g. Google Scholar?
-    * Surpress stdout and print output path only
-* Usability
-    * check network connectivity when no proxy is configured
-    * Provide module integration
-    * Export as (cross-platform) executable
-    * Optimize dependencies
-        * Use urllib instead of requests?
-* Testing
-    * Test on other versions of Python
-    * Check compatibility on other OS
-* Miscellaneous
-    * Better repo structure organization
+### Features
+
+* Support for arXiv (in testing stage)
+* Support for PMID
+* Direct search with e.g. Google Scholar?
+* Surpress stdout and print output path only
+
+### Usability
+
+* check network connectivity when no proxy is configured
+* Provide module integration
+* Export as (cross-platform) executable
+* Optimize dependencies
+    * Use urllib instead of requests?
+
+### Testing
+
+* Test on other versions of Python
+* Check compatibility on other OS
+
+### Miscellaneous
+
+* Better repo structure organization
 
 ## License
 
