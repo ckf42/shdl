@@ -9,16 +9,58 @@ A script to fetch file by their identifiers
 * Custom mirrors
 * Decide file automatically (still in testing stage)
 
+## Usage
+
+### Fetch document to current working directory
+
+`shdl 10.1109/5.771073`
+
+### Accept different DOI forms
+
+`shdl https://doi.org/10.1109/5.771073`
+
+`shdl doi.org/10.1109/5.771073`
+
+`shdl dx.doi.org/10.1109/5.771073`
+
+Query string containing space must be enquoted
+
+`shdl "doi: 10.1109/5.771073"`
+
+### Custom mirror sites
+
+Will always use HTTPS if not specified
+
+`shdl 10.1109/5.771073 --mirror custom.mirror.site`
+
+(equivalent to `shdl 10.1109/5.771073 --mirror https://custom.mirror.site`)
+
+`shdl 10.1109/5.771073 --mirror first.mirror.to.try --mirror second.mirror.to.try`
+
+### Custom proxy
+
+`shdl 10.1109/5.771073 --proxy socks5h://127.0.0.1:9150`
+
+### Filename control
+
+`shdl 10.1109/5.771073` → `paskin1999.pdf`
+
+`shdl 10.1109/5.771073 --output topsecret` → `topsecret.pdf`
+
+`shdl 10.1109/5.771073 --autoname` → `[N. Paskin, doi 10.1109 5.771073]Toward Unique Identifiers.pdf`
+
 ## Dependencies
 
 * Python 3 (tested on 3.8+)
-* [requests[socks]](https://pypi.org/project/requests/ "PyPi") (tested on 2.26.0)
+* [requests[socks]](https://pypi.org/project/requests/ "PyPI") (tested on 2.26.0)
 
 ## TODO
 
+* Support for arXiv
+* Provide module interface
 * Export as executable
 * Optimize dependencies
-* Use urllib instead of requests?
+    * Use urllib instead of requests?
 * Test on other versions of Python
 * Check compatibility on other OS
 
