@@ -108,6 +108,18 @@ def verbosePrint(msg: str,
         print(msg)
 
 
+def transformToAuthorStr(authorList: tuple[tuple[str]]) -> str:
+    # (given name, family name)
+    return ', '.join(''.join((gNamePart
+                              if len(gNamePart) <= 1
+                              else gNamePart[0] + '.')
+                             for gNamePart
+                             in re.split(r'\b', authorNameTuple[0]))
+                     + ' '
+                     + authorNameTuple[1]
+                     for authorNameTuple in authorList)
+
+
 # list modified from https://gist.github.com/sebleier/554280
 stopwordLst = (
     'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an',
@@ -124,21 +136,10 @@ stopwordLst = (
 )
 
 
-def transformToAuthorStr(authorList: tuple[tuple[str]]) -> str:
-    # (given name, family name)
-    return ', '.join(''.join((gNamePart
-                              if len(gNamePart) <= 1
-                              else gNamePart[0] + '.')
-                             for gNamePart
-                             in re.split(r'\b', authorNameTuple[0]))
-                     + ' '
-                     + authorNameTuple[1]
-                     for authorNameTuple in authorList)
-
-
 # TODO better method?
 def transformToTitle(s: str) -> str:
-    wordsInSent = re.split('\\b', re.sub('</?mml.+?>', '', s.strip(' ,."\'')))
+    wordsInSent = re.split('\\b',
+                           re.sub('</?mml.+?>', '', s.strip(' ,."\'')))
     if len(wordsInSent) <= 1:
         return s
     return wordsInSent[1] + ''.join(
@@ -155,6 +156,18 @@ def sanitizeString(s: str) -> str:
         .translate(str.maketrans({k: '' for k in '/<>:\"\\|?*'}))
         .translate(str.maketrans({'’': '\''}))
     ).encode('ASCII', 'ignore').decode()
+
+
+def checkMetaInfoResponseValidity(res: rq.Response, metaType: str) -> bool:
+    if metaType == 'doi':
+        return res.status_code == 200 \
+            and res.headers['content-type'] == ('application/'
+                                                'vnd.citationstyles.csl+json')
+    elif metaType == 'arxiv':
+        return res.status_code == 200 \
+            and 'http://arxiv.org/api/errors' not in res.text
+    else:
+        raise ValueError(f"Unknown metaType {metaType}")
 
 
 def getMetaInfoFromResponse(res: rq.Response, metaType: str) -> tuple:
@@ -175,7 +188,7 @@ def getMetaInfoFromResponse(res: rq.Response, metaType: str) -> tuple:
             xmlEntryRoot.find(f'{aStr}title')
         )
     else:
-        raise ValueError("Unknown metaType")
+        raise ValueError(f"Unknown metaType {metaType}")
 
 
 if args.dir is None:
@@ -229,40 +242,63 @@ if proxyDict is not None:
 else:
     print("WARNING: No proxy configured")
 
-args.doi = re.sub("^(https?://)?(dx\\.|www\\.)?doi(\\.org/|:|/)\\s*",
-                  '',
-                  args.doi.strip())
-doiRes = rq.get(
-    urljoin('https://doi.org', args.doi),
-    headers={"Accept": "application/vnd.citationstyles.csl+json"}
-)
-if doiRes.status_code != 200 \
-    or doiRes.headers['content-type'] != ('application/'
-                                          'vnd.citationstyles.csl+json'):
-    print(f"Fail to resolve input DOI \"{args.doi}\"")
+# deciding query type
+queryType = next((qType for qType in ('doi', 'arxiv')
+                  if qType in args.doi.lower()),
+                 None)
+if queryType is None:
+    print("Cannot parse decide repo type")
     quit(4)
-verbosePrint(f"Input DOI: {args.doi}")
+verbosePrint(f"Query string type: {queryType}")
+rgxExtractPattern, metaQueryURL, reqHeader = {
+    'doi': (
+        '^(https?://)?(dx\\.|www\\.)?doi(\\.org/|:|/)\\s*',
+        'https://doi.org/{id}',
+        {"Accept": "application/vnd.citationstyles.csl+json"}
+    ),
+    'arxiv': (
+        '^(https?://)?arxiv(\\.org/abs/|:)?\\s*',
+        'http://export.arxiv.org/api/query?id_list={id}',
+        None
+    )
+}.get(queryType)
 
-autoPatchedName = None
-if args.output is not None:
-    # priority surpress
-    args.autoname = False
-if args.autoname:
-    metaDataTuple = getMetaInfoFromResponse(doiRes, 'doi')
-    autoPatchedName = sanitizeString(
+args.doi = re.sub(rgxExtractPattern,
+                  '',
+                  args.doi.strip(),
+                  re.IGNORECASE)
+metaQueryRes = rq.get(metaQueryURL.format(id=args.doi),
+                      headers=reqHeader)
+if not checkMetaInfoResponseValidity(metaQueryRes, queryType):
+    print(f"Fail to resolve input query \"{args.doi}\"")
+    quit(4)
+verbosePrint(f"Input query: {args.doi}")
+
+if args.output is None and args.autoname:
+    metaDataTuple = getMetaInfoFromResponse(metaQueryRes, queryType)
+    args.output = sanitizeString(
         f"[{transformToAuthorStr(metaDataTuple[0])}, "
-        f"doi {args.doi.replace('/', '@')}]"
+        f"{queryType} {args.doi.replace('/', '@')}]"
         + transformToTitle(metaDataTuple[1])
     )
-    print("Autopatched title: " + autoPatchedName)
+    print("Autopatched title: " + args.output)
+
 
 # TODO check if different mirrors have different response link
 # TODO find better regex pattern
-rePattern = re.compile("\"location\\.href=.?'(.+?)\\?.*?download=true")
+rePatternForMirror = re.compile(
+    "\"location\\.href=.?'(.+?)\\?.*?download=true"
+)
 
 
-# TODO do not ref global var
-def tryFetchRecordFromMirror(mirrorURL: str, docDOI: str) -> bool:
+def fetchFileFromArXiv():
+    # TODO find dl link from e.g. response xml
+    pass
+
+
+# TODO do not ref global var?
+def tryFetchRecordFromMirror(mirrorURL: str,
+                             docDOI: str) -> bool:
     verbosePrint("Checking if mirror is online ...")
     try:
         if rq.get(mirrorURL,
@@ -297,7 +333,7 @@ def tryFetchRecordFromMirror(mirrorURL: str, docDOI: str) -> bool:
         if 'download=true' in line:
             verbosePrint(line, 2)
             dlURL = urlunparse(
-                urlparse(rePattern.search(line).group(1)
+                urlparse(rePatternForMirror.search(line).group(1)
                          .replace(r'\\', '\\').replace(r'\/', '/'),
                          scheme="https")
             ).rsplit("#")[0]
@@ -318,11 +354,11 @@ def tryFetchRecordFromMirror(mirrorURL: str, docDOI: str) -> bool:
     docURL = possibleDLLinkLst[0]
 
     verbosePrint(f"Downloading from {docURL} ...")
-    dlFilename = urlparse(docURL).path.rsplit('/', 1)[-1]
-    if args.output is not None:
-        dlFilename = args.output + '.' + dlFilename.rsplit('.')[-1]
-    elif args.autoname:
-        dlFilename = autoPatchedName + '.' + dlFilename.rsplit('.')[-1]
+    dlFilename = None
+    if args.output is None:
+        dlFilename = urlparse(docURL).path.rsplit('/', 1)[-1]
+    else:
+        dlFilename = args.output + '.' + dlFilename.rsplit('.', 1)[-1]
     dlTargetPath = args.dir / dlFilename
     verbosePrint(f"Downloading to {str(dlTargetPath)}")
     downloadedSize = 0
@@ -362,7 +398,10 @@ def tryFetchRecordFromMirror(mirrorURL: str, docDOI: str) -> bool:
     return True
 
 
-if not any(tryFetchRecordFromMirror(mirrorURL, args.doi)
-           for mirrorURL
-           in args.mirror):
+if queryType == 'doi' \
+    and not any(tryFetchRecordFromMirror(mirrorURL, args.doi)
+                for mirrorURL
+                in args.mirror):
     print("Download failed: no mirror seems to have this document")
+elif queryType == 'arxiv':
+    fetchFileFromArXiv()
