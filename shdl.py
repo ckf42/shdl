@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # TODO use urllib.request instead?
 import requests as rq
 import re
