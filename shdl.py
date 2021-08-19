@@ -84,6 +84,9 @@ parser.add_argument("--autoname",
                     "May not give the best file name. "
                     "Format: [<authors>, doi <doi>]<title>. "
                     "Has lower priority than --output")
+parser.add_argument("--nocolor",
+                    action='store_true',
+                    help="Surpress color display")
 parser.add_argument("--verbose", "-v",
                     action='count',
                     default=0,
@@ -100,7 +103,11 @@ args = parser.parse_args()
 
 
 # print colors for xterm-256color
-def pcolors(msg: str, msgType: str) -> str:
+def pcolors(msg: str,
+            msgType: str,
+            colorDisplay: bool = not args.nocolor) -> str:
+    if not colorDisplay:
+        return msg
     frontColorSeq = {
         'DOI': '\033[94m',
         'PATH': '\033[92m',
@@ -109,7 +116,7 @@ def pcolors(msg: str, msgType: str) -> str:
         'BOLD': '\033[1m',
         'UNDERLINE': '\033[4m',
         'ENDC': '\033[0m',
-    }.get(msgType, '\033[0m')
+    }.get(msgType.upper(), '\033[0m')
     return f"{frontColorSeq}{msg}\033[0m"
 
 
@@ -223,8 +230,9 @@ else:
         if not args.dir.is_dir():
             raise FileNotFoundError
     except FileNotFoundError:
+        print(pcolors("ERROR:", 'ERROR'), end=' ')
         print(str(joinedDir), "is not a valid directory")
-        quit()
+        quit(1)
 verbosePrint(
     f"Download directory: {pcolors(str(args.dir), 'PATH')}")
 
@@ -272,7 +280,7 @@ queryType = next((qType for qType in ('doi', 'arxiv')
                   if qType in args.doi.lower()),
                  None)
 if queryType is None:
-    print("Cannot decide repo type")
+    print(f"{pcolors('ERROR:', 'ERROR')} Cannot decide repo type")
     quit(4)
 verbosePrint(f"Query string type: {queryType}")
 reDOISanitizePattern, metaQueryURL, reqHeader = {
@@ -321,6 +329,7 @@ def getTargetFileHandle(
         decidedFilename = decidedFilename + '.' + targetURL.rsplit('.', 1)[-1]
     dlPath = dlDir / decidedFilename
     if len(str(dlPath)) >= 250:
+        print(pcolors("ERROR:", 'ERROR'), end=" ")
         print("Cannot download to path exceeding 250 characters")
         return False
     verbosePrint(f"Downloading to {str(dlPath)}")
@@ -328,6 +337,7 @@ def getTargetFileHandle(
         fHandle = dlPath.open('wb')
     except (PermissionError, FileNotFoundError):
         # TODO better handling of exceptions
+        print(pcolors("ERROR:", 'ERROR'), end=" ")
         print(f"Cannot write to target path \"{str(dlPath)}\"")
         return False
     return fHandle
@@ -356,7 +366,8 @@ def downloadFileToPath(targetURL: str,
                 downloadedSize += len(dataChunk)
                 if fileSize is not None:
                     dlMsg = "Downloaded " \
-                        + f"{downloadedSize / fileSize * 100 :.2f}%"
+                        + f"{downloadedSize / fileSize * 100 :.2f}% " \
+                        + f"({humanByteUnitString(downloadedSize)})"
                 else:
                     dlMsg = "Downloaded " \
                         + humanByteUnitString(downloadedSize)
@@ -390,9 +401,11 @@ def getDOIRecordURL(identifierStr: str, mirrorURL: str) -> str:
     except (rq.exceptions.MissingSchema,
             rq.exceptions.InvalidSchema,
             rq.exceptions.InvalidURL):
+        print(pcolors("ERROR:", 'ERROR'), end=" ")
         print(f"{mirrorURL} does not seem valid")
         return False
     except rq.exceptions.ConnectionError:
+        print(pcolors("ERROR:", 'ERROR'), end=" ")
         print(f"Cannot connect to {mirrorURL}")
         return False
     # query mirror
@@ -422,16 +435,18 @@ def getDOIRecordURL(identifierStr: str, mirrorURL: str) -> str:
             verbosePrint(f"Link found: {dlURL}")
             possibleDLLinkLst.append(dlURL)
     if len(possibleDLLinkLst) == 0:
+        print(pcolors("ERROR:", 'ERROR'))
         print("No download link detected in response. \n"
               "Response format is not understood, "
               "or file may no be available on this mirror.")
         return False
     elif len(possibleDLLinkLst) > 1:
+        print(pcolors("WARNING:", 'WARNING'))
         print("Multiple download links found. \n"
               "They are: ")
         for lnk in possibleDLLinkLst:
             print(lnk)
-        print("Using only the first link")
+        print(f"{pcolors('WARNING:', 'WARNING')} Using only the first link")
         possibleDLLinkLst = possibleDLLinkLst[:1]
     return possibleDLLinkLst[0]
 
@@ -460,12 +475,14 @@ if queryType == 'doi':
                                    'headers': {'User-Agent': args.useragent}})
                for mirrorURL
                in args.mirror):
-        print("Download failed: no mirror seems to have this document")
+        print(f"{pcolors('Download failed:', 'ERROR')} no mirror seems to "
+              "have this document")
         quit(5)
 elif queryType == 'arxiv':
     if not fetchRecFromMirror(args.doi,
                               'https://arxiv.org/pdf/',
                               getArXivRecordURL,
                               {}):
-        print("Download failed: unable to fetch this document from arXiv")
+        print(f"{pcolors('Download failed:', 'ERROR')} unable to fetch "
+              "this document from arXiv")
         quit(5)
