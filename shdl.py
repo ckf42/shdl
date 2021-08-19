@@ -74,13 +74,20 @@ parser.add_argument("--autoname",
                     action='store_true',
                     help="Automatically name the file by its DOI metadata. "
                     "May not give the best file name. "
-                    "Format: [<authors>, doi <doi>]<title> "
+                    "Format: [<authors>, doi <doi>]<title>. "
                     "Has lower priority than --output")
 parser.add_argument("--verbose", "-v",
                     action='count',
                     default=0,
                     help="Display verbose information")
 args = parser.parse_args()
+
+# errorcode:
+# 0: success
+# 1: cannot write output file
+# 2: argument error
+# 3: cannot connect to internet
+# 4: query string invalid
 
 
 def humanByteUnitString(s: int) -> str:
@@ -115,9 +122,21 @@ stopwordLst = (
 )
 
 
+def transformToAuthorStr(authorList: list[tuple[str, str]]) -> str:
+    # (given name, family name)
+    return ', '.join(''.join((gNamePart
+                              if len(gNamePart) <= 1
+                              else gNamePart[0] + '.')
+                             for gNamePart
+                             in re.split(r'\b', authorNameTuple[0]))
+                     + ' '
+                     + authorNameTuple[1]
+                     for authorNameTuple in authorList)
+
+
 # TODO better method?
-def titleCapitalize(s: str) -> str:
-    wordsInSent = re.split('\\b', s)
+def transformToTitle(s: str) -> str:
+    wordsInSent = re.split('\\b', re.sub('</?mml.+?>', '', s.strip(' ,."\'')))
     if len(wordsInSent) <= 1:
         return s
     return wordsInSent[1] + ''.join(
@@ -147,12 +166,14 @@ else:
             raise FileNotFoundError
     except FileNotFoundError:
         print(str(joinedDir), "is not a valid directory")
-        quit()
+        quit(1)
 verbosePrint(f"Download directory: {str(args.dir)}")
 
 if args.mirror is None:
     # apply default
     args.mirror = ("https://sci-hub.se/", )
+    print("No mirror provided")
+    quit(2)
 else:
     args.mirror = tuple(
         # enforce https if not specified
@@ -172,14 +193,14 @@ if proxyDict is not None:
                headers={'User-Agent': args.useragent})
     except (rq.exceptions.InvalidURL, rq.exceptions.ProxyError):
         print("Proxy config is invalid")
-        quit()
+        quit(2)
     except rq.ConnectionError:
         print("Failed connecting to requested proxy")
-        quit()
+        quit(3)
     except Exception as e:
         print("Unknown exception when testing proxy connectivity: ")
         print(e)
-        quit()
+        quit(3)
     else:
         verbosePrint(f"Using proxy {args.proxy}")
 else:
@@ -196,7 +217,7 @@ if doiRes.status_code != 200 \
     or doiRes.headers['content-type'] != ('application/'
                                           'vnd.citationstyles.csl+json'):
     print(f"Fail to resolve input DOI \"{args.doi}\"")
-    quit()
+    quit(4)
 verbosePrint(f"Input DOI: {args.doi}")
 
 autoPatchedName = None
@@ -205,20 +226,14 @@ if args.output is not None:
     args.autoname = False
 if args.autoname:
     metaDict = doiRes.json()
-    authorStr = ', '.join(''.join((gNamePart
-                                   if len(gNamePart) <= 1
-                                   else gNamePart[0] + '.')
-                                  for gNamePart
-                                  in re.split(r'\b', authorDict['given']))
-                          + ' '
-                          + authorDict['family']
-                          for authorDict in metaDict['author'])
+    authorStr = transformToAuthorStr(list(
+        (aDict['given'], aDict['family'])
+        for aDict in metaDict['author']
+    ))
     verbosePrint(f"author string: {authorStr}")
     autoPatchedName = sanitizeString(
         f"[{authorStr}, doi {args.doi.replace('/', ' ')}]"
-        + titleCapitalize(re.sub('</?mml.+?>',
-                                 '',
-                                 metaDict['title'].strip(' ,."\'')))
+        + transformToTitle(metaDict['title'])
     )
     print("Autopatched title: " + autoPatchedName)
 
@@ -227,7 +242,7 @@ if args.autoname:
 rePattern = re.compile("\"location\\.href=.?'(.+?)\\?.*?download=true")
 
 
-def tryFetchDocFromSciHubMirror(mirrorURL: str, docDOI: str) -> bool:
+def tryFetchRecordFromMirror(mirrorURL: str, docDOI: str) -> bool:
     verbosePrint("Checking if mirror is online ...")
     try:
         if rq.get(mirrorURL,
@@ -327,7 +342,7 @@ def tryFetchDocFromSciHubMirror(mirrorURL: str, docDOI: str) -> bool:
     return True
 
 
-if not any(tryFetchDocFromSciHubMirror(mirrorURL, args.doi)
+if not any(tryFetchRecordFromMirror(mirrorURL, args.doi)
            for mirrorURL
            in args.mirror):
     print("Download failed: no mirror seems to have this document")
