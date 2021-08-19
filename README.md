@@ -77,6 +77,7 @@ Will always use HTTPS if not specified
     * Support for PMID
     * Direct search with e.g. Google Scholar?
 * Usability
+    * check network connectivity when no proxy is configured
     * Provide module integration
     * Export as (cross-platform) executable
     * Optimize dependencies
