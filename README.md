@@ -7,15 +7,27 @@ A script to fetch file by their identifiers
 * Fetch document with DOI
 * Custom proxy
 * Custom mirrors
-* Decide file automatically (still in testing stage)
+* Decide file automatically
 
 ## Usage
 
-### Fetch document to current working directory
+### Document fetching
+
+Unless `--dir` is specified, file is saved to the current working directory
 
 `shdl 10.1109/5.771073`
 
-### Accept different DOI forms
+Save document to home directory
+
+`shdl 10.1109/5.771073 --dir ~`
+
+Relative path support
+
+`shdl 10.1109/5.771073 --dir ./documents`
+
+`shdl 10.1109/5.771073 --dir ~/documents`
+
+### Different DOI queries
 
 `shdl https://doi.org/10.1109/5.771073`
 
@@ -56,13 +68,20 @@ Will always use HTTPS if not specified
 
 ## TODO
 
-* Support for arXiv
-* Provide module interface
-* Export as executable
-* Optimize dependencies
-    * Use urllib instead of requests?
-* Test on other versions of Python
-* Check compatibility on other OS
+* Features
+    * Support for arXiv
+    * Support for PMID
+    * Direct search with e.g. Google Scholar?
+* Usability
+    * Provide module integration
+    * Export as (cross-platform) executable
+    * Optimize dependencies
+        * Use urllib instead of requests?
+* Testing
+    * Test on other versions of Python
+    * Check compatibility on other OS
+* Miscellaneous
+    * Better repo structure organization
 
 ## License
 
