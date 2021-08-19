@@ -8,6 +8,17 @@ import pathlib
 # TODO use unidecode instead?
 from unicodedata import normalize as ucNormalize
 
+# print colors for xterm-256color 
+class pcolors:
+    DOI = '\033[94m'
+    PATH = '\033[92m'
+    WARNING = '\033[93m'
+    ERROR = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m' 
+    ENDC = '\033[0m'
+
+# parser setup
 parser = aAP(description="A simple script for downloading files from Sci-Hub",
              epilog="This script works by parsing the response "
              "sent back from the server. "
@@ -45,7 +56,7 @@ parser.add_argument("--output", "-o",
                     "File extension part will always follow from mirror. "
                     "Default: "
                     "the remote file name")
-parser.add_argument("--dir",
+parser.add_argument("--dir", "-d",
                     type=str,
                     help="Download to this directory. "
                     "Relative path to current working directory. "
@@ -149,7 +160,7 @@ else:
     except FileNotFoundError:
         print(str(joinedDir), "is not a valid directory")
         quit()
-verbosePrint(f"Download directory: {str(args.dir)}")
+verbosePrint(f"Download directory: {pcolors.PATH}{str(args.dir)}{pcolors.ENDC}")
 
 if args.mirror is None:
     # apply default
@@ -172,19 +183,19 @@ if proxyDict is not None:
                proxies=proxyDict,
                headers={'User-Agent': args.useragent})
     except (rq.exceptions.InvalidURL, rq.exceptions.ProxyError):
-        print("Proxy config is invalid")
+        print(f"{pcolors.ERROR}ERROR:{pcolors.ENDC} Proxy config is invalid")
         quit()
     except rq.ConnectionError:
-        print("Failed connecting to requested proxy")
+        print(f"{pcolors.ERROR}ERROR:{pcolors.ENDC} Failed connecting to requested proxy")
         quit()
     except Exception as e:
-        print("Unknown exception when testing proxy connectivity: ")
+        print(f"{pcolors.ERROR}ERROR:{pcolors.ENDC} Unknown exception when testing proxy connectivity: ")
         print(e)
         quit()
     else:
         verbosePrint(f"Using proxy {args.proxy}")
 else:
-    print("WARNING: No proxy configured")
+    print(f"{pcolors.WARNING}WARNING:{pcolors.ENDC} No proxy configured")
 
 args.doi = re.sub("^(https?://)?(dx\\.|www\\.)?doi(\\.org/|:|/)\\s*",
                   '',
@@ -196,9 +207,9 @@ doiRes = rq.get(
 if doiRes.status_code != 200 \
     or doiRes.headers['content-type'] != ('application/'
                                           'vnd.citationstyles.csl+json'):
-    print(f"Fail to resolve input DOI \"{args.doi}\"")
+    print(f"{pcolors.ERROR}ERROR:{pcolors.ENDC} Failed to resolve input DOI {pcolors.DOI}{args.doi}{pcolors.ENDC}")
     quit()
-verbosePrint(f"Input DOI: {args.doi}")
+verbosePrint(f"Input DOI: {pcolors.DOI}{args.doi}{pcolors.ENDC}")
 
 autoPatchedName = None
 if args.output is not None:
@@ -290,7 +301,7 @@ def tryFetchDocFromSciHubMirror(mirrorURL: str, docDOI: str) -> bool:
     elif args.autoname:
         dlFilename = autoPatchedName + '.' + dlFilename.rsplit('.')[-1]
     dlTargetPath = args.dir / dlFilename
-    verbosePrint(f"Downloading to {str(dlTargetPath)}")
+    verbosePrint(f"Downloading as {pcolors.PATH}{str(dlTargetPath)}{pcolors.ENDC}")
     downloadedSize = 0
     lastLineLen = 0
     dlMsg = None
