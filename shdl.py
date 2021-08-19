@@ -6,6 +6,8 @@ from urllib.parse import urljoin, urlunparse, urlparse
 import pathlib
 # TODO use unidecode instead?
 from unicodedata import normalize as ucNormalize
+# for arxiv metadata parsing
+from xml.etree import ElementTree as eTree
 
 parser = aAP(description="A simple script for downloading files from Sci-Hub",
              epilog="This script works by parsing the response "
@@ -122,7 +124,7 @@ stopwordLst = (
 )
 
 
-def transformToAuthorStr(authorList: list[tuple[str, str]]) -> str:
+def transformToAuthorStr(authorList: tuple[tuple[str]]) -> str:
     # (given name, family name)
     return ', '.join(''.join((gNamePart
                               if len(gNamePart) <= 1
@@ -155,6 +157,27 @@ def sanitizeString(s: str) -> str:
     ).encode('ASCII', 'ignore').decode()
 
 
+def getMetaInfoFromResponse(res: rq.Response, metaType: str) -> tuple:
+    if metaType == 'doi':
+        metaDict = res.json()
+        return (
+            tuple((aDict['given'], aDict['family'])
+                  for aDict in metaDict['author']),
+            metaDict['title']
+        )
+    elif metaType == 'arxiv':
+        aStr = '{http://www.w3.org/2005/Atom}'
+        xmlEntryRoot = eTree.fromstring(res.text).find(f'{aStr}entry')
+        return (
+            tuple(tuple(ele.text.rsplit(' '))
+                  for ele
+                  in xmlEntryRoot.findall(f'{aStr}author/{aStr}name')),
+            xmlEntryRoot.find(f'{aStr}title')
+        )
+    else:
+        raise ValueError("Unknown metaType")
+
+
 if args.dir is None:
     args.dir = pathlib.Path.cwd()
 else:
@@ -172,8 +195,8 @@ verbosePrint(f"Download directory: {str(args.dir)}")
 if args.mirror is None:
     # apply default
     args.mirror = ("https://sci-hub.se/", )
-    print("No mirror provided")
-    quit(2)
+    # print("No mirror provided")
+    # quit(2)
 else:
     args.mirror = tuple(
         # enforce https if not specified
@@ -225,15 +248,11 @@ if args.output is not None:
     # priority surpress
     args.autoname = False
 if args.autoname:
-    metaDict = doiRes.json()
-    authorStr = transformToAuthorStr(list(
-        (aDict['given'], aDict['family'])
-        for aDict in metaDict['author']
-    ))
-    verbosePrint(f"author string: {authorStr}")
+    metaDataTuple = getMetaInfoFromResponse(doiRes, 'doi')
     autoPatchedName = sanitizeString(
-        f"[{authorStr}, doi {args.doi.replace('/', ' ')}]"
-        + transformToTitle(metaDict['title'])
+        f"[{transformToAuthorStr(metaDataTuple[0])}, "
+        f"doi {args.doi.replace('/', ' ')}]"
+        + transformToTitle(metaDataTuple[1])
     )
     print("Autopatched title: " + autoPatchedName)
 
@@ -242,6 +261,7 @@ if args.autoname:
 rePattern = re.compile("\"location\\.href=.?'(.+?)\\?.*?download=true")
 
 
+# TODO do not ref global var
 def tryFetchRecordFromMirror(mirrorURL: str, docDOI: str) -> bool:
     verbosePrint("Checking if mirror is online ...")
     try:
