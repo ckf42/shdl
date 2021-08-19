@@ -72,6 +72,7 @@ Will always use HTTPS if not specified
     * Support for arXiv
     * Support for PMID
     * Direct search with e.g. Google Scholar?
+    * Surpress stdout and print output path only
 * Usability
     * check network connectivity when no proxy is configured
     * Provide module integration
