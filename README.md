@@ -9,6 +9,10 @@ A script to fetch file by their identifiers
 * Custom mirrors
 * Decide file name automatically
 
+## Install
+
+TODO: add install here
+
 ## Usage
 
 ### Document fetching
