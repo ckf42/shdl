@@ -7,7 +7,7 @@ A script to fetch file by their identifiers
 * Fetch document with DOI
 * Custom proxy
 * Custom mirrors
-* Decide file automatically
+* Decide file name automatically
 
 ## Usage
 
