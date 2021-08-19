@@ -251,7 +251,7 @@ if args.autoname:
     metaDataTuple = getMetaInfoFromResponse(doiRes, 'doi')
     autoPatchedName = sanitizeString(
         f"[{transformToAuthorStr(metaDataTuple[0])}, "
-        f"doi {args.doi.replace('/', ' ')}]"
+        f"doi {args.doi.replace('/', '@')}]"
         + transformToTitle(metaDataTuple[1])
     )
     print("Autopatched title: " + autoPatchedName)
