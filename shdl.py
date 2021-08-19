@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # TODO use urllib.request instead?
 import requests as rq
 import re
@@ -13,6 +14,8 @@ from xml.etree import ElementTree as eTree
 from typing import BinaryIO, Union
 from collections.abc import Callable
 
+
+# parser setup
 parser = aAP(description="A simple script for downloading files from Sci-Hub",
              epilog="This script works by parsing the response "
              "sent back from the server. "
@@ -50,7 +53,7 @@ parser.add_argument("--output", "-o",
                     "File extension part will always follow from mirror. "
                     "Default: "
                     "the remote file name")
-parser.add_argument("--dir",
+parser.add_argument("--dir", "-d",
                     type=str,
                     help="Download to this directory. "
                     "Relative path to current working directory. "
@@ -94,6 +97,20 @@ args = parser.parse_args()
 # 3: cannot connect to internet
 # 4: query string invalid
 # 5: cannot fetch file
+
+
+# print colors for xterm-256color
+def pcolors(msg: str, msgType: str) -> str:
+    frontColorSeq = {
+        'DOI': '\033[94m',
+        'PATH': '\033[92m',
+        'WARNING': '\033[93m',
+        'ERROR': '\033[91m',
+        'BOLD': '\033[1m',
+        'UNDERLINE': '\033[4m',
+        'ENDC': '\033[0m',
+    }.get(msgType, '\033[0m')
+    return f"{frontColorSeq}{msg}\033[0m"
 
 
 def humanByteUnitString(s: int) -> str:
@@ -207,8 +224,9 @@ else:
             raise FileNotFoundError
     except FileNotFoundError:
         print(str(joinedDir), "is not a valid directory")
-        quit(1)
-verbosePrint(f"Download directory: {str(args.dir)}")
+        quit()
+verbosePrint(
+    f"Download directory: {pcolors(str(args.dir), 'PATH')}")
 
 if args.mirror is None:
     # apply default
@@ -233,19 +251,21 @@ if proxyDict is not None:
                proxies=proxyDict,
                headers={'User-Agent': args.useragent})
     except (rq.exceptions.InvalidURL, rq.exceptions.ProxyError):
-        print("Proxy config is invalid")
+        print(f"{pcolors('ERROR:', 'ERROR')} Proxy config is invalid")
         quit(2)
     except rq.ConnectionError:
-        print("Failed connecting to requested proxy")
+        print(f"{pcolors('ERROR:', 'ERROR')} Failed connecting to "
+              "requested proxy")
         quit(3)
     except Exception as e:
-        print("Unknown exception when testing proxy connectivity: ")
+        print(f"{pcolors('ERROR:', 'ERROR')} Unknown exception when testing "
+              "proxy connectivity: ")
         print(e)
         quit(3)
     else:
         verbosePrint(f"Using proxy {args.proxy}")
 else:
-    print("WARNING: No proxy configured")
+    print(f"{pcolors('WARNING:', 'WARNING')} No proxy configured")
 
 # deciding query type
 queryType = next((qType for qType in ('doi', 'arxiv')
@@ -276,7 +296,8 @@ verbosePrint(f"Sanitized query: {args.doi}")
 metaQueryRes = rq.get(metaQueryURL.format(id=args.doi),
                       headers=reqHeader)
 if not checkMetaInfoResponseValidity(metaQueryRes, queryType):
-    print(f"Fail to resolve input query \"{args.doi}\"")
+    print(f"{pcolors('ERROR:', 'ERROR')} Failed to resolve input DOI "
+          f"{pcolors(args.doi, 'DOI')}")
     quit(4)
 
 if args.output is None and args.autoname:

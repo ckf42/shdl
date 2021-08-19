@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# curDir=$(cd $(dirname "$0") && pwd) 
+cd test
+python3 ../shdl.py -h 
+echo ""
+
+python3 ../shdl.py https://doi.org/10.1109/5.771073
+echo ""
+
+python3 ../shdl.py https://doi.org/10.1109/5.771073 -v
+echo ""
+
+python3 ../shdl.py https://doi.org/10.1109/5.771073 -o test -v
+echo ""
+
+mkdir -p sample && python3 ../shdl.py https://doi.org/10.1109/5.771073 -d sample -o test -v
+echo ""
