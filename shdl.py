@@ -17,12 +17,12 @@ parser = aAP(description="A simple script for downloading files from Sci-Hub",
              "in the future. ")
 parser.add_argument("--version", "-V",
                     action='version',
-                    version="%(prog)s v0.4.1 by KAC")
+                    version="%(prog)s v0.4.1")
 parser.add_argument("doi",
                     type=str,
                     help="The DOI string of the document. "
                     "If the string contains spaces, it must be quoted")
-parser.add_argument("--proxy",
+parser.add_argument("--proxy", "-p",
                     type=str,
                     help="Requests-type proxy argument. "
                     "Used for both HTTP and HTTPS. "
@@ -48,7 +48,7 @@ parser.add_argument("--dir",
                     type=str,
                     help="Download to this directory. "
                     "Relative path to current working directory. "
-                    "May contain (Unix-style) ~ for home dir. "
+                    "Use ~ for home directory. "
                     "Default: "
                     "current working directory")
 parser.add_argument("--chunk",
