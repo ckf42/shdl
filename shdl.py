@@ -214,7 +214,9 @@ def getMetaInfoFromResponse(res: rq.Response,
             tuple(tuple(ele.text.rsplit(' ', 1))
                   for ele
                   in xmlEntryRoot.findall(f'{aStr}author/{aStr}name')),
-            re.sub('\\n|\\s{2,}', '', xmlEntryRoot.find(f'{aStr}title').text)
+            re.sub('\\s+',
+                   ' ',
+                   xmlEntryRoot.find(f'{aStr}title').text.replace('\n', ''))
         )
     else:
         raise ValueError(f"Unknown metaType {metaType}")
@@ -311,6 +313,8 @@ if not checkMetaInfoResponseValidity(metaQueryRes, queryType):
 
 if args.output is None and args.autoname:
     metaDataTuple = getMetaInfoFromResponse(metaQueryRes, queryType)
+    verbosePrint(f"author string: {metaDataTuple[0]}")
+    verbosePrint(f"title string: {metaDataTuple[1]}")
     args.output = sanitizeString(
         f"[{transformToAuthorStr(metaDataTuple[0])}, "
         f"{queryType} {args.doi.replace('/', '@')}]"
