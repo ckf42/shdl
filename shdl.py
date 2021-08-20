@@ -11,7 +11,7 @@ from html import unescape
 # for arxiv metadata parsing
 from xml.etree import ElementTree as eTree
 # for type hint
-from typing import Union
+from typing import Union, NoReturn
 from io import BufferedWriter
 from collections.abc import Callable
 
@@ -137,7 +137,7 @@ def pcolors(msg: str,
     return f"{frontColorSeq}{msg}\033[0m"
 
 
-def infoPrint(msg, *args, printSuppress=args.piping, **kwargs) -> None:
+def infoPrint(msg, *args, printSuppress=args.piping, **kwargs) -> NoReturn:
     if not printSuppress:
         print(msg, *args, **kwargs)
 
@@ -153,12 +153,12 @@ def humanByteUnitString(s: int) -> str:
 
 def verbosePrint(msg: str,
                  msgVerboseLevel: int = 1,
-                 configVerboseLevel: int = args.verbose) -> None:
+                 configVerboseLevel: int = args.verbose) -> NoReturn:
     if msgVerboseLevel <= configVerboseLevel:
         infoPrint(msg)
 
 
-def transformToAuthorStr(authorList: tuple[tuple[str]]) -> str:
+def transformToAuthorStr(authorList) -> str:
     # authorList assumed (given name, family name)
     return ', '.join(''.join((gNamePart
                               if len(gNamePart) <= 1 or not gNamePart.isalpha()
@@ -227,7 +227,7 @@ def checkMetaInfoResponseValidity(res: rq.Response, metaType: str) -> bool:
 
 
 def getMetaInfoFromResponse(res: rq.Response,
-                            metaType: str) -> tuple[tuple[str], str]:
+                            metaType: str):
     if metaType == 'doi':
         metaDict = res.json()
         return (
