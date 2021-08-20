@@ -50,6 +50,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+test/*
 
 # Translations
 *.mo
@@ -164,6 +165,3 @@ tags
 # Ignore all local history of files
 .history
 .ionide
-
-# Downloaded pdf for test
-.pdf

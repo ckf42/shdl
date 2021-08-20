@@ -10,8 +10,23 @@ echo ""
 python3 ../shdl.py https://doi.org/10.1109/5.771073 -v
 echo ""
 
+python3 ../shdl.py https://doi.org/10.1109/5.771073 -v --autoname
+echo ""
+
 python3 ../shdl.py https://doi.org/10.1109/5.771073 -o test -v
 echo ""
 
 mkdir -p sample && python3 ../shdl.py https://doi.org/10.1109/5.771073 -d sample -o test -v
+echo ""
+
+python3 ../shdl.py https://arxiv.org/abs/1501.00001 -v
+echo ""
+
+python3 ../shdl.py https://arxiv.org/abs/1501.00001 -v --autoname
+echo ""
+
+python3 ../shdl.py https://arxiv.org/abs/1501.00001 -o arxivTest -v
+echo ""
+
+mkdir -p sample && python3 ../shdl.py https://doi.org/10.1109/5.771073 -d sample -o arxivTest -v
 echo ""
