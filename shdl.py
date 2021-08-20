@@ -276,12 +276,14 @@ else:
     print(f"{pcolors('WARNING:', 'WARNING')} No proxy configured")
 
 # deciding query type
+# TODO find better method
 queryType = next((qType for qType in ('doi', 'arxiv')
                   if qType in args.doi.lower()),
-                 None)
-if queryType is None:
-    print(f"{pcolors('ERROR:', 'ERROR')} Cannot decide repo type")
-    quit(4)
+                 'doi')
+# TODO need to check if query string is indeed DOI string when cannot decide
+# if queryType is None:
+#     print(f"{pcolors('ERROR:', 'ERROR')} Cannot decide repo type")
+#     quit(4)
 verbosePrint(f"Query string type: {queryType}")
 reDOISanitizePattern, metaQueryURL, reqHeader = {
     'doi': (
