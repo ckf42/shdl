@@ -88,7 +88,7 @@ parser.add_argument("--piping",
                     action='store_true',
                     help="Suppress all information, "
                     "Print only the absolute file path as unquoted string "
-                    "if success, "
+                    "if succeeds, "
                     "print nothing otherwise. "
                     "All errors are silently passed. "
                     "Implies --nocolor and no --verbose")
@@ -279,29 +279,30 @@ else:
 proxyDict = {'http': args.proxy, 'https': args.proxy} \
     if (args.proxy is not None and args.proxy != "") \
     else None
-# check proxy
-if proxyDict is not None:
-    try:
-        verbosePrint("Testing proxy ...")
-        rq.get("https://example.com/",
-               proxies=proxyDict,
-               headers={'User-Agent': args.useragent})
-    except (rq.exceptions.InvalidURL, rq.exceptions.ProxyError):
-        infoPrint(f"{pcolors('ERROR:', 'ERROR')} Proxy config is invalid")
-        quit(2)
-    except rq.ConnectionError:
-        infoPrint(f"{pcolors('ERROR:', 'ERROR')} Failed connecting to "
-                  "requested proxy")
-        quit(3)
-    except Exception as e:
-        infoPrint(f"{pcolors('ERROR:', 'ERROR')} "
-                  "Unknown exception when testing proxy connectivity: ")
-        infoPrint(e)
-        quit(3)
-    else:
-        verbosePrint(f"Using proxy {args.proxy}")
-else:
+# check internet
+if proxyDict is None:
     infoPrint(f"{pcolors('WARNING:', 'WARNING')} No proxy configured")
+verbosePrint("Testing network connectivity ...")
+try:
+    rq.get("https://example.com/",
+           proxies=proxyDict,
+           headers={'User-Agent': args.useragent})
+except rq.exceptions.ProxyError:
+    infoPrint(f"{pcolors('ERROR:', 'ERROR')} Proxy config is invalid")
+    quit(2)
+except rq.ConnectionError:
+    infoPrint(f"{pcolors('ERROR:', 'ERROR')} Failed connecting to the "
+              "internet")
+    if proxyDict is not None:
+        infoPrint("Maybe proxy is not setup correctly?")
+    quit(3)
+except Exception as e:
+    infoPrint(f"{pcolors('ERROR:', 'ERROR')} "
+              "Unknown exception when testing network connectivity: ")
+    infoPrint(e)
+    quit(3)
+else:
+    verbosePrint(f"Using proxy {args.proxy}")
 
 # deciding query type
 # TODO find better method

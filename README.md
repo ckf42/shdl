@@ -93,7 +93,6 @@ Will always use HTTPS if not specified
 
 ### Usability
 
-* Check network connectivity when no proxy is configured
 * Export as (cross-platform?) standalone executable
 * Provide module integration
 * Optimize dependencies
