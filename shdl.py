@@ -11,7 +11,8 @@ from unicodedata import normalize as ucNormalize
 # for arxiv metadata parsing
 from xml.etree import ElementTree as eTree
 # for type hint
-from typing import BinaryIO, Union
+from typing import Union
+from io import BufferedWriter
 from collections.abc import Callable
 
 
@@ -87,6 +88,14 @@ parser.add_argument("--autoname",
 parser.add_argument("--nocolor",
                     action='store_true',
                     help="Suppress color display")
+parser.add_argument("--piping",
+                    action='store_true',
+                    help="Suppress all information, "
+                    "Print only the absolute file path as unquoted string "
+                    "if success, "
+                    "print nothing otherwise. "
+                    "All errors are silently passed. "
+                    "Implies --nocolor and no --verbose")
 parser.add_argument("--verbose", "-v",
                     action='count',
                     default=0,
@@ -100,6 +109,11 @@ args = parser.parse_args()
 # 3: cannot connect to internet
 # 4: query string invalid
 # 5: cannot fetch file
+
+# print suppress for piping
+if args.piping:
+    args.nocolor = True
+    args.verbose = -1
 
 
 # print colors for xterm-256color
@@ -120,6 +134,11 @@ def pcolors(msg: str,
     return f"{frontColorSeq}{msg}\033[0m"
 
 
+def infoPrint(msg, *args, printSuppress=args.piping, **kwargs) -> None:
+    if not printSuppress:
+        print(msg, *args, **kwargs)
+
+
 def humanByteUnitString(s: int) -> str:
     if s >= 1024 ** 2:
         return f"{s / (1024 ** 2) :.2f} MB"
@@ -133,7 +152,7 @@ def verbosePrint(msg: str,
                  msgVerboseLevel: int = 1,
                  configVerboseLevel: int = args.verbose) -> None:
     if msgVerboseLevel <= configVerboseLevel:
-        print(msg)
+        infoPrint(msg)
 
 
 def transformToAuthorStr(authorList: tuple[tuple[str]]) -> str:
@@ -240,15 +259,15 @@ else:
         if not args.dir.is_dir():
             raise FileNotFoundError
     except FileNotFoundError:
-        print(pcolors("ERROR:", 'ERROR'), end=' ')
-        print(str(joinedDir), "is not a valid directory")
+        infoPrint(pcolors("ERROR:", 'ERROR'), end=' ')
+        infoPrint(str(joinedDir), "is not a valid directory")
         quit(1)
 verbosePrint(f"Download directory: {pcolors(str(args.dir), 'PATH')}")
 
 if args.mirror is None:
     # apply default
     args.mirror = ("https://sci-hub.se/", )
-    # print("No mirror provided")
+    # infoPrint("No mirror provided")
     # quit(2)
 else:
     args.mirror = tuple(
@@ -268,21 +287,21 @@ if proxyDict is not None:
                proxies=proxyDict,
                headers={'User-Agent': args.useragent})
     except (rq.exceptions.InvalidURL, rq.exceptions.ProxyError):
-        print(f"{pcolors('ERROR:', 'ERROR')} Proxy config is invalid")
+        infoPrint(f"{pcolors('ERROR:', 'ERROR')} Proxy config is invalid")
         quit(2)
     except rq.ConnectionError:
-        print(f"{pcolors('ERROR:', 'ERROR')} Failed connecting to "
-              "requested proxy")
+        infoPrint(f"{pcolors('ERROR:', 'ERROR')} Failed connecting to "
+                  "requested proxy")
         quit(3)
     except Exception as e:
-        print(f"{pcolors('ERROR:', 'ERROR')} Unknown exception when testing "
-              "proxy connectivity: ")
-        print(e)
+        infoPrint(f"{pcolors('ERROR:', 'ERROR')} "
+                  "Unknown exception when testing proxy connectivity: ")
+        infoPrint(e)
         quit(3)
     else:
         verbosePrint(f"Using proxy {args.proxy}")
 else:
-    print(f"{pcolors('WARNING:', 'WARNING')} No proxy configured")
+    infoPrint(f"{pcolors('WARNING:', 'WARNING')} No proxy configured")
 
 # deciding query type
 # TODO find better method
@@ -291,7 +310,7 @@ queryType = next((qType for qType in ('doi', 'arxiv')
                  'doi')
 # TODO need to check if query string is indeed DOI string when cannot decide
 # if queryType is None:
-#     print(f"{pcolors('ERROR:', 'ERROR')} Cannot decide repo type")
+#     infoPrint(f"{pcolors('ERROR:', 'ERROR')} Cannot decide repo type")
 #     quit(4)
 verbosePrint(f"Query string type: {pcolors(queryType, 'DOI')}")
 reDOISanitizePattern, metaQueryURL, reqHeader = {
@@ -315,8 +334,8 @@ verbosePrint(f"Sanitized query: {pcolors(args.doi, 'DOI')}")
 metaQueryRes = rq.get(metaQueryURL.format(id=args.doi),
                       headers=reqHeader)
 if not checkMetaInfoResponseValidity(metaQueryRes, queryType):
-    print(f"{pcolors('ERROR:', 'ERROR')} Failed to resolve input DOI "
-          f"{pcolors(args.doi, 'DOI')}")
+    infoPrint(f"{pcolors('ERROR:', 'ERROR')} Failed to resolve input DOI "
+              f"{pcolors(args.doi, 'DOI')}")
     quit(4)
 
 if args.output is None and args.autoname:
@@ -328,37 +347,37 @@ if args.output is None and args.autoname:
         f"{queryType} {args.doi.replace('/', '@')}]"
         + transformToTitle(metaDataTuple[1])
     )
-    print("Autopatched title: " + pcolors(args.output, 'PATH'))
+    infoPrint("Autopatched title: " + pcolors(args.output, 'PATH'))
 
 
 def getTargetFileHandle(
     dlDir: pathlib.Path,
     targetURL: str,
     decidedFilename: Union[None, str]
-) -> Union[BinaryIO, bool]:
+) -> Union[BufferedWriter, bool]:
     if decidedFilename is None:
         decidedFilename = urlparse(targetURL).path.rsplit('/', 1)[-1]
     else:
         decidedFilename = decidedFilename + '.' + targetURL.rsplit('.', 1)[-1]
     dlPath = dlDir / decidedFilename
     if len(str(dlPath)) >= 250:
-        print(pcolors("ERROR:", 'ERROR'), end=" ")
-        print("Cannot download to path exceeding 250 characters")
+        infoPrint(pcolors("ERROR:", 'ERROR'), end=" ")
+        infoPrint("Cannot download to path exceeding 250 characters")
         return False
     verbosePrint(f"Downloading to {pcolors(str(dlPath), 'PATH')}")
     try:
         fHandle = dlPath.open('wb')
     except (PermissionError, FileNotFoundError):
         # TODO better handling of exceptions
-        print(pcolors("ERROR:", 'ERROR'), end=" ")
-        print("Cannot write to "
-              f"target path \"{pcolors(str(dlPath), 'PATH')}\"")
+        infoPrint(pcolors("ERROR:", 'ERROR'), end=" ")
+        infoPrint("Cannot write to "
+                  f"target path \"{pcolors(str(dlPath), 'PATH')}\"")
         return False
     return fHandle
 
 
 def downloadFileToPath(targetURL: str,
-                       openedFileHandle: BinaryIO,
+                       openedFileHandle: BufferedWriter,
                        rqGetKwargDict: dict) -> bool:
     # assumed openedFileHandle is opened and valid for writing
     # openedFileHandle is automatically closed
@@ -371,9 +390,9 @@ def downloadFileToPath(targetURL: str,
         fileSize = dlResponse.headers.get('Content-Length', None)
         if fileSize is not None:
             fileSize = int(fileSize)
-            print("File size: " + humanByteUnitString(fileSize))
+            infoPrint("File size: " + humanByteUnitString(fileSize))
         else:
-            print("File size unknown")
+            infoPrint("File size unknown")
         with openedFileHandle:
             for dataChunk in dlResponse.iter_content(chunk_size=args.chunk):
                 openedFileHandle.write(dataChunk)
@@ -385,11 +404,11 @@ def downloadFileToPath(targetURL: str,
                 else:
                     dlMsg = "Downloaded " \
                         + humanByteUnitString(downloadedSize)
-                print(dlMsg, end='')
+                infoPrint(dlMsg, end='')
                 lenDLMsg = len(dlMsg)
-                print(" " * (lastLineLen - lenDLMsg), end='\r')
+                infoPrint(" " * (lastLineLen - lenDLMsg), end='\r')
                 lastLineLen = lenDLMsg
-    print("\nDownload done")
+    infoPrint("\nDownload done")
     return True
 
 
@@ -415,12 +434,12 @@ def getDOIRecordURL(identifierStr: str, mirrorURL: str) -> Union[str, bool]:
     except (rq.exceptions.MissingSchema,
             rq.exceptions.InvalidSchema,
             rq.exceptions.InvalidURL):
-        print(pcolors("ERROR:", 'ERROR'), end=" ")
-        print(f"{mirrorURL} does not seem valid")
+        infoPrint(pcolors("ERROR:", 'ERROR'), end=" ")
+        infoPrint(f"{mirrorURL} does not seem valid")
         return False
     except rq.exceptions.ConnectionError:
-        print(pcolors("ERROR:", 'ERROR'), end=" ")
-        print(f"Cannot connect to {mirrorURL}")
+        infoPrint(pcolors("ERROR:", 'ERROR'), end=" ")
+        infoPrint(f"Cannot connect to {mirrorURL}")
         return False
     # query mirror
     thisQueryURL = urljoin(mirrorURL, identifierStr)
@@ -433,8 +452,8 @@ def getDOIRecordURL(identifierStr: str, mirrorURL: str) -> Union[str, bool]:
     # TODO better method of checking first return
     if (not firstResponse.headers['Content-Type'].startswith('text/html')) \
             or len(firstResponse.text.strip('\n ')) == 0:
-        print(f"{pcolors('ERROR:', 'ERROR')} Empty response. "
-              "Maybe no search result?")
+        infoPrint(f"{pcolors('ERROR:', 'ERROR')} Empty response. "
+                  "Maybe no search result?")
         return False
     # extract download link
     verbosePrint("Findind download link from response ...")
@@ -453,25 +472,26 @@ def getDOIRecordURL(identifierStr: str, mirrorURL: str) -> Union[str, bool]:
             verbosePrint(f"Link found: {pcolors(dlURL, 'PATH')}")
             possibleDLLinkLst.append(dlURL)
     if len(possibleDLLinkLst) == 0:
-        print(pcolors("ERROR:", 'ERROR'))
-        print("No download link detected in response. \n"
-              "Response format is not understood, "
-              "or file may no be available on this mirror.")
+        infoPrint(pcolors("ERROR:", 'ERROR'))
+        infoPrint("No download link detected in response. \n"
+                  "Response format is not understood, "
+                  "or file may no be available on this mirror.")
         return False
     elif len(possibleDLLinkLst) > 1:
-        print(pcolors("WARNING:", 'WARNING'))
-        print("Multiple download links found. \n"
-              "They are: ")
+        infoPrint(pcolors("WARNING:", 'WARNING'))
+        infoPrint("Multiple download links found. \n"
+                  "They are: ")
         for lnk in possibleDLLinkLst:
-            print(lnk)
-        print(f"{pcolors('WARNING:', 'WARNING')} Using only the first link")
+            infoPrint(lnk)
+        infoPrint(f"{pcolors('WARNING:', 'WARNING')} "
+                  "Using only the first link")
         possibleDLLinkLst = possibleDLLinkLst[:1]
     return possibleDLLinkLst[0]
 
 
 def fetchRecFromMirror(recIdentifier: str,
                        mirrorURL: str,
-                       recURLFetcher: Callable[str, str],
+                       recURLFetcher: Callable[str, Union[bool, str]],
                        rqGetKwargDict: dict) -> bool:
     docURL = recURLFetcher(recIdentifier, mirrorURL)
     if docURL is False:
@@ -482,9 +502,14 @@ def fetchRecFromMirror(recIdentifier: str,
     if fileHandle is False:
         return False
     else:
-        return downloadFileToPath(docURL,
-                                  fileHandle,
-                                  rqGetKwargDict)
+        downloadSuccessState = downloadFileToPath(docURL,
+                                                  fileHandle,
+                                                  rqGetKwargDict)
+        if args.piping and downloadSuccessState:
+            infoPrint(str((pathlib.Path.cwd() / fileHandle.name)
+                          .resolve(strict=True)),
+                      printSuppress=False)
+        return downloadSuccessState
 
 
 if queryType == 'doi':
@@ -495,14 +520,14 @@ if queryType == 'doi':
                                    'headers': {'User-Agent': args.useragent}})
                for mirrorURL
                in args.mirror):
-        print(f"{pcolors('Download failed:', 'ERROR')} no mirror seems to "
-              "have this document")
+        infoPrint(f"{pcolors('Download failed:', 'ERROR')} no mirror seems to "
+                  "have this document")
         quit(5)
 elif queryType == 'arxiv':
     if not fetchRecFromMirror(args.doi,
                               'https://arxiv.org/pdf/',
                               getArXivRecordURL,
                               {}):
-        print(f"{pcolors('Download failed:', 'ERROR')} unable to fetch "
-              "this document from arXiv")
+        infoPrint(f"{pcolors('Download failed:', 'ERROR')} unable to fetch "
+                  "this document from arXiv")
         quit(5)
