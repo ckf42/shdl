@@ -96,6 +96,9 @@ parser.add_argument("--piping",
                     "print nothing otherwise. "
                     "All errors are silently passed. "
                     "Implies --nocolor and no --verbose")
+parser.add_argument("--dryrun",
+                    action='store_true',
+                    help="Do not actually write on disk or download the file")
 parser.add_argument("--verbose", "-v",
                     action='count',
                     default=0,
@@ -364,6 +367,8 @@ def getTargetFileHandle(
         infoPrint(pcolors("ERROR:", 'ERROR'), end=" ")
         infoPrint("Cannot download to path exceeding 250 characters")
         return False
+    if args.dryrun:
+        return True
     verbosePrint(f"Downloading to {pcolors(str(dlPath), 'PATH')}")
     try:
         fHandle = dlPath.open('wb')
@@ -381,6 +386,10 @@ def downloadFileToPath(targetURL: str,
                        rqGetKwargDict: dict) -> bool:
     # assumed openedFileHandle is opened and valid for writing
     # openedFileHandle is automatically closed
+    if args.dryrun:
+        # should not get called but nevertheless
+        openedFileHandle.close()
+        return True
     # TODO exception handling?
     downloadedSize = 0
     lastLineLen = 0
@@ -499,8 +508,8 @@ def fetchRecFromMirror(recIdentifier: str,
     fileHandle = getTargetFileHandle(args.dir,
                                      docURL,
                                      args.output)
-    if fileHandle is False:
-        return False
+    if isinstance(fileHandle, bool):
+        return fileHandle
     else:
         downloadSuccessState = downloadFileToPath(docURL,
                                                   fileHandle,
