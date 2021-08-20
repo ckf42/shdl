@@ -26,7 +26,7 @@ parser = aAP(description="A simple script for downloading files from Sci-Hub",
              "in the future. ")
 parser.add_argument("--version", "-V",
                     action='version',
-                    version="%(prog)s v0.4.1")
+                    version="% (prog)s v0.5.0")
 parser.add_argument("doi",
                     type=str,
                     help="The DOI string of the document. "
