@@ -1,13 +1,13 @@
 # shdl
 
-A script to fetch file by their identifiers
+A script to fetch files by their identifiers
 
 ## Features
 
 * Fetch document with DOI and arXiv identifier
 * Custom proxy
 * Custom mirrors
-* Decide file name automatically
+* Decide file name via its metadata
 
 ## Install
 
@@ -89,7 +89,6 @@ Will always use HTTPS if not specified
 
 * Support for PMID
 * Direct search with e.g. Google Scholar?
-* Suppress stdout and print output path only (for output piping)
 * Allow custom format for `--autoname`
 
 ### Usability
@@ -102,7 +101,6 @@ Will always use HTTPS if not specified
 
 ### Testing
 
-* Add test case for arXiv
 * Test on other versions of Python
 * Check compatibility on other OS
 
