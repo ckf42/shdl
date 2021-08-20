@@ -397,7 +397,7 @@ reDOIExtractPattern = re.compile(
 )
 
 
-def getDOIRecordURL(identifierStr: str, mirrorURL: str) -> str:
+def getDOIRecordURL(identifierStr: str, mirrorURL: str) -> Union[str, bool]:
     verbosePrint("Checking if mirror is online ...")
     try:
         if rq.get(mirrorURL,
@@ -466,11 +466,13 @@ def fetchRecFromMirror(recIdentifier: str,
                        recURLFetcher: Callable[str, str],
                        rqGetKwargDict: dict) -> bool:
     docURL = recURLFetcher(recIdentifier, mirrorURL)
+    if docURL is False:
+        return False
     fileHandle = getTargetFileHandle(args.dir,
                                      docURL,
                                      args.output)
     if fileHandle is False:
-        quit(1)
+        return False
     else:
         return downloadFileToPath(docURL,
                                   fileHandle,
