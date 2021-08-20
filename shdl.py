@@ -5,8 +5,14 @@ import re
 from argparse import ArgumentParser as aAP
 from urllib.parse import urljoin, urlunparse, urlparse
 import pathlib
+# for filename normalization
 # TODO use unidecode instead?
 from unicodedata import normalize as ucNormalize
+# for arxiv metadata parsing
+from xml.etree import ElementTree as eTree
+# for type hint
+from typing import BinaryIO, Union
+from collections.abc import Callable
 
 
 # parser setup
@@ -70,24 +76,38 @@ parser.add_argument("--useragent",
                     "but you can find the requested papers on the website, "
                     "try changing this. "
                     "Default: "
-                    "(TOR Browser on Win10 x64) "
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) "
                     "Gecko/20100101 Firefox/78.0")
 parser.add_argument("--autoname",
                     action='store_true',
                     help="Automatically name the file by its DOI metadata. "
                     "May not give the best file name. "
-                    "Format: [<authors>, doi <doi>]<title> "
+                    "Format: [<authors>, doi <doi>]<title>. "
                     "Has lower priority than --output")
+parser.add_argument("--nocolor",
+                    action='store_true',
+                    help="Surpress color display")
 parser.add_argument("--verbose", "-v",
                     action='count',
                     default=0,
                     help="Display verbose information")
 args = parser.parse_args()
 
+# errorcode:
+# 0: success
+# 1: cannot write output file
+# 2: argument error
+# 3: cannot connect to internet
+# 4: query string invalid
+# 5: cannot fetch file
+
 
 # print colors for xterm-256color
-def pcolors(msg: str, msgType: str) -> str:
+def pcolors(msg: str,
+            msgType: str,
+            colorDisplay: bool = not args.nocolor) -> str:
+    if not colorDisplay:
+        return msg
     frontColorSeq = {
         'DOI': '\033[94m',
         'PATH': '\033[92m',
@@ -96,7 +116,7 @@ def pcolors(msg: str, msgType: str) -> str:
         'BOLD': '\033[1m',
         'UNDERLINE': '\033[4m',
         'ENDC': '\033[0m',
-    }.get(msgType, '\033[0m')
+    }.get(msgType.upper(), '\033[0m')
     return f"{frontColorSeq}{msg}\033[0m"
 
 
@@ -116,6 +136,18 @@ def verbosePrint(msg: str,
         print(msg)
 
 
+def transformToAuthorStr(authorList: tuple[tuple[str]]) -> str:
+    # authorList assumed (given name, family name)
+    return ', '.join(''.join((gNamePart
+                              if len(gNamePart) <= 1 or not gNamePart.isalpha()
+                              else (gNamePart[0] + '.'))
+                             for gNamePart
+                             in re.split(r'\b', authorNameTuple[0]))
+                     + ' '
+                     + authorNameTuple[1]
+                     for authorNameTuple in authorList)
+
+
 # list modified from https://gist.github.com/sebleier/554280
 stopwordLst = (
     'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an',
@@ -133,8 +165,9 @@ stopwordLst = (
 
 
 # TODO better method?
-def titleCapitalize(s: str) -> str:
-    wordsInSent = re.split('\\b', s)
+def transformToTitle(s: str) -> str:
+    wordsInSent = re.split('\\b',
+                           re.sub('</?mml.+?>', '', s.strip(' ,."\'')))
     if len(wordsInSent) <= 1:
         return s
     return wordsInSent[1] + ''.join(
@@ -153,6 +186,40 @@ def sanitizeString(s: str) -> str:
     ).encode('ASCII', 'ignore').decode()
 
 
+def checkMetaInfoResponseValidity(res: rq.Response, metaType: str) -> bool:
+    if metaType == 'doi':
+        return res.status_code == 200 \
+            and res.headers['content-type'] == ('application/'
+                                                'vnd.citationstyles.csl+json')
+    elif metaType == 'arxiv':
+        return res.status_code == 200 \
+            and 'http://arxiv.org/api/errors' not in res.text
+    else:
+        raise ValueError(f"Unknown metaType {metaType}")
+
+
+def getMetaInfoFromResponse(res: rq.Response,
+                            metaType: str) -> tuple[tuple[str], str]:
+    if metaType == 'doi':
+        metaDict = res.json()
+        return (
+            tuple((aDict['given'], aDict['family'])
+                  for aDict in metaDict['author']),
+            metaDict['title']
+        )
+    elif metaType == 'arxiv':
+        aStr = '{http://www.w3.org/2005/Atom}'
+        xmlEntryRoot = eTree.fromstring(res.text).find(f'{aStr}entry')
+        return (
+            tuple(tuple(ele.text.rsplit(' ', 1))
+                  for ele
+                  in xmlEntryRoot.findall(f'{aStr}author/{aStr}name')),
+            re.sub('\\n|\\s{2,}', '', xmlEntryRoot.find(f'{aStr}title').text)
+        )
+    else:
+        raise ValueError(f"Unknown metaType {metaType}")
+
+
 if args.dir is None:
     args.dir = pathlib.Path.cwd()
 else:
@@ -163,14 +230,17 @@ else:
         if not args.dir.is_dir():
             raise FileNotFoundError
     except FileNotFoundError:
+        print(pcolors("ERROR:", 'ERROR'), end=' ')
         print(str(joinedDir), "is not a valid directory")
-        quit()
+        quit(1)
 verbosePrint(
     f"Download directory: {pcolors(str(args.dir), 'PATH')}")
 
 if args.mirror is None:
     # apply default
     args.mirror = ("https://sci-hub.se/", )
+    # print("No mirror provided")
+    # quit(2)
 else:
     args.mirror = tuple(
         # enforce https if not specified
@@ -190,153 +260,114 @@ if proxyDict is not None:
                headers={'User-Agent': args.useragent})
     except (rq.exceptions.InvalidURL, rq.exceptions.ProxyError):
         print(f"{pcolors('ERROR:', 'ERROR')} Proxy config is invalid")
-        quit()
+        quit(2)
     except rq.ConnectionError:
         print(f"{pcolors('ERROR:', 'ERROR')} Failed connecting to "
               "requested proxy")
-        quit()
+        quit(3)
     except Exception as e:
         print(f"{pcolors('ERROR:', 'ERROR')} Unknown exception when testing "
               "proxy connectivity: ")
         print(e)
-        quit()
+        quit(3)
     else:
         verbosePrint(f"Using proxy {args.proxy}")
 else:
     print(f"{pcolors('WARNING:', 'WARNING')} No proxy configured")
 
-args.doi = re.sub("^(https?://)?(dx\\.|www\\.)?doi(\\.org/|:|/)\\s*",
+# deciding query type
+queryType = next((qType for qType in ('doi', 'arxiv')
+                  if qType in args.doi.lower()),
+                 None)
+if queryType is None:
+    print(f"{pcolors('ERROR:', 'ERROR')} Cannot decide repo type")
+    quit(4)
+verbosePrint(f"Query string type: {queryType}")
+reDOISanitizePattern, metaQueryURL, reqHeader = {
+    'doi': (
+        '^(https?://)?(dx\\.|www\\.)?doi(\\.org/|:|/)\\s*',
+        'https://doi.org/{id}',
+        {"Accept": "application/vnd.citationstyles.csl+json"}
+    ),
+    'arxiv': (
+        '^(https?://)?arxiv(\\.org/abs/|:)?\\s*',
+        'http://export.arxiv.org/api/query?id_list={id}',
+        None
+    )
+}.get(queryType)
+
+args.doi = re.sub(reDOISanitizePattern,
                   '',
-                  args.doi.strip())
-doiRes = rq.get(
-    urljoin('https://doi.org', args.doi),
-    headers={"Accept": "application/vnd.citationstyles.csl+json"}
-)
-if doiRes.status_code != 200 \
-    or doiRes.headers['content-type'] != ('application/'
-                                          'vnd.citationstyles.csl+json'):
+                  args.doi.strip(),
+                  flags=re.IGNORECASE)
+verbosePrint(f"Sanitized query: {args.doi}")
+metaQueryRes = rq.get(metaQueryURL.format(id=args.doi),
+                      headers=reqHeader)
+if not checkMetaInfoResponseValidity(metaQueryRes, queryType):
     print(f"{pcolors('ERROR:', 'ERROR')} Failed to resolve input DOI "
           f"{pcolors(args.doi, 'DOI')}")
-    quit()
-verbosePrint(f"Input DOI: {pcolors(args.doi, 'DOI')}")
+    quit(4)
 
-autoPatchedName = None
-if args.output is not None:
-    # priority surpress
-    args.autoname = False
-if args.autoname:
-    metaDict = doiRes.json()
-    authorStr = ', '.join(''.join((gNamePart
-                                   if len(gNamePart) <= 1
-                                   else gNamePart[0] + '.')
-                                  for gNamePart
-                                  in re.split(r'\b', authorDict['given']))
-                          + ' '
-                          + authorDict['family']
-                          for authorDict in metaDict['author'])
-    verbosePrint(f"author string: {authorStr}")
-    autoPatchedName = sanitizeString(
-        f"[{authorStr}, doi {args.doi.replace('/', ' ')}]"
-        + titleCapitalize(re.sub('</?mml.+?>',
-                                 '',
-                                 metaDict['title'].strip(' ,."\'')))
+if args.output is None and args.autoname:
+    metaDataTuple = getMetaInfoFromResponse(metaQueryRes, queryType)
+    args.output = sanitizeString(
+        f"[{transformToAuthorStr(metaDataTuple[0])}, "
+        f"{queryType} {args.doi.replace('/', '@')}]"
+        + transformToTitle(metaDataTuple[1])
     )
-    print("Autopatched title: " + autoPatchedName)
-
-# TODO check if different mirrors have different response link
-# TODO find better regex pattern
-rePattern = re.compile("\"location\\.href=.?'(.+?)\\?.*?download=true")
+    print("Autopatched title: " + args.output)
 
 
-def tryFetchDocFromSciHubMirror(mirrorURL: str, docDOI: str) -> bool:
-    verbosePrint("Checking if mirror is online ...")
+def getTargetFileHandle(
+    dlDir: pathlib.Path,
+    targetURL: str,
+    decidedFilename: Union[None, str]
+) -> Union[BinaryIO, bool]:
+    if decidedFilename is None:
+        decidedFilename = urlparse(targetURL).path.rsplit('/', 1)[-1]
+    else:
+        decidedFilename = decidedFilename + '.' + targetURL.rsplit('.', 1)[-1]
+    dlPath = dlDir / decidedFilename
+    if len(str(dlPath)) >= 250:
+        print(pcolors("ERROR:", 'ERROR'), end=" ")
+        print("Cannot download to path exceeding 250 characters")
+        return False
+    verbosePrint(f"Downloading to {str(dlPath)}")
     try:
-        if rq.get(mirrorURL,
-                  proxies=proxyDict,
-                  headers={'User-Agent': args.useragent}).status_code != 200:
-            raise rq.exceptions.ConnectionError
-    except (rq.exceptions.MissingSchema,
-            rq.exceptions.InvalidSchema,
-            rq.exceptions.InvalidURL):
-        print(f"{mirrorURL} does not seem valid")
+        fHandle = dlPath.open('wb')
+    except (PermissionError, FileNotFoundError):
+        # TODO better handling of exceptions
+        print(pcolors("ERROR:", 'ERROR'), end=" ")
+        print(f"Cannot write to target path \"{str(dlPath)}\"")
         return False
-    except rq.exceptions.ConnectionError:
-        print(f"Cannot connect to {mirrorURL}")
-        return False
+    return fHandle
 
-    verbosePrint("Querying " + urljoin(mirrorURL, docDOI) + " ...")
-    firstResponse = rq.get(urljoin(mirrorURL, docDOI),
-                           proxies=proxyDict,
-                           headers={'User-Agent': args.useragent})
-    # TODO better method of checking first return
-    if (not firstResponse.headers['Content-Type'].startswith('text/html')) \
-            or len(firstResponse.text.strip('\n ')) == 0:
-        print("Empty response. Maybe no search result?")
-        return False
 
-    verbosePrint("Findind download link from response ...")
-    possibleDLLinkLst = list()
-    for line in firstResponse.text.splitlines():
-        # TODO better method of extracting download link
-        # TODO better de-escaping url
-        # enforce https if no scheme
-        if 'download=true' in line:
-            verbosePrint(line, 2)
-            dlURL = urlunparse(
-                urlparse(rePattern.search(line).group(1)
-                         .replace(r'\\', '\\').replace(r'\/', '/'),
-                         scheme="https")
-            ).rsplit("#")[0]
-            verbosePrint(f"Link found: {dlURL}")
-            possibleDLLinkLst.append(dlURL)
-    if len(possibleDLLinkLst) == 0:
-        print("No download link detected in response. \n"
-              "Response format is not understood, "
-              "or file may no be available on this mirror.")
-        return False
-    elif len(possibleDLLinkLst) > 1:
-        print("Multiple download links found. \n"
-              "They are: ")
-        for lnk in possibleDLLinkLst:
-            print(lnk)
-        print("Using only the first link")
-        possibleDLLinkLst = possibleDLLinkLst[:1]
-    docURL = possibleDLLinkLst[0]
-
-    verbosePrint(f"Downloading from {docURL} ...")
-    dlFilename = urlparse(docURL).path.rsplit('/', 1)[-1]
-    if args.output is not None:
-        dlFilename = args.output + '.' + dlFilename.rsplit('.')[-1]
-    elif args.autoname:
-        dlFilename = autoPatchedName + '.' + dlFilename.rsplit('.')[-1]
-    dlTargetPath = args.dir / dlFilename
-    verbosePrint(f"Downloading as {pcolors(str(dlTargetPath), 'PATH')}")
+def downloadFileToPath(targetURL: str,
+                       openedFileHandle: BinaryIO,
+                       rqGetKwargDict: dict) -> bool:
+    # assumed openedFileHandle is opened and valid for writing
+    # openedFileHandle is automatically closed
+    # TODO exception handling?
     downloadedSize = 0
     lastLineLen = 0
     dlMsg = None
-    try:
-        fileHandle = dlTargetPath.open('wb')
-    except PermissionError:
-        # TODO better handling of exceptions
-        print(f"Cannot write to target path \"{str(dlTargetPath)}\"")
-        return False
-    with rq.get(docURL,
-                proxies=proxyDict,
-                stream=True,
-                headers={'User-Agent': args.useragent}) as dlResponse:
+    verbosePrint(f"Downloading from {targetURL} ...")
+    with rq.get(targetURL, stream=True, **rqGetKwargDict) as dlResponse:
         fileSize = dlResponse.headers.get('Content-Length', None)
         if fileSize is not None:
             fileSize = int(fileSize)
             print("File size: " + humanByteUnitString(fileSize))
         else:
             print("File size unknown")
-        with fileHandle:
+        with openedFileHandle:
             for dataChunk in dlResponse.iter_content(chunk_size=args.chunk):
-                fileHandle.write(dataChunk)
+                openedFileHandle.write(dataChunk)
                 downloadedSize += len(dataChunk)
                 if fileSize is not None:
                     dlMsg = "Downloaded " \
-                        + f"{downloadedSize / fileSize * 100 :.2f}%"
+                        + f"{downloadedSize / fileSize * 100 :.2f}% " \
+                        + f"({humanByteUnitString(downloadedSize)})"
                 else:
                     dlMsg = "Downloaded " \
                         + humanByteUnitString(downloadedSize)
@@ -348,7 +379,110 @@ def tryFetchDocFromSciHubMirror(mirrorURL: str, docDOI: str) -> bool:
     return True
 
 
-if not any(tryFetchDocFromSciHubMirror(mirrorURL, args.doi)
-           for mirrorURL
-           in args.mirror):
-    print("Download failed: no mirror seems to have this document")
+def getArXivRecordURL(identifierStr: str, mirrorURL: str) -> str:
+    # TODO check if alright
+    return urljoin(mirrorURL, identifierStr + '.pdf')
+
+
+# TODO check if different mirrors have different response link
+# TODO find better regex pattern
+reDOIExtractPattern = re.compile(
+    "\"location\\.href=.?'(.+?)\\?.*?download=true"
+)
+
+
+def getDOIRecordURL(identifierStr: str, mirrorURL: str) -> str:
+    verbosePrint("Checking if mirror is online ...")
+    try:
+        if rq.get(mirrorURL,
+                  proxies=proxyDict,
+                  headers={'User-Agent': args.useragent}).status_code != 200:
+            raise rq.exceptions.ConnectionError
+    except (rq.exceptions.MissingSchema,
+            rq.exceptions.InvalidSchema,
+            rq.exceptions.InvalidURL):
+        print(pcolors("ERROR:", 'ERROR'), end=" ")
+        print(f"{mirrorURL} does not seem valid")
+        return False
+    except rq.exceptions.ConnectionError:
+        print(pcolors("ERROR:", 'ERROR'), end=" ")
+        print(f"Cannot connect to {mirrorURL}")
+        return False
+    # query mirror
+    verbosePrint("Querying " + urljoin(mirrorURL, identifierStr) + " ...")
+    firstResponse = rq.get(urljoin(mirrorURL, identifierStr),
+                           proxies=proxyDict,
+                           headers={'User-Agent': args.useragent})
+    # TODO better method of checking first return
+    if (not firstResponse.headers['Content-Type'].startswith('text/html')) \
+            or len(firstResponse.text.strip('\n ')) == 0:
+        print("Empty response. Maybe no search result?")
+        return False
+    # extract download link
+    verbosePrint("Findind download link from response ...")
+    possibleDLLinkLst = list()
+    for line in firstResponse.text.splitlines():
+        # TODO better method of extracting download link
+        # TODO better de-escaping url
+        # enforce https if no scheme
+        if 'download=true' in line:
+            verbosePrint(line, 2)
+            dlURL = urlunparse(
+                urlparse(reDOIExtractPattern.search(line).group(1)
+                         .replace(r'\\', '\\').replace(r'\/', '/'),
+                         scheme="https")
+            ).rsplit("#")[0]
+            verbosePrint(f"Link found: {dlURL}")
+            possibleDLLinkLst.append(dlURL)
+    if len(possibleDLLinkLst) == 0:
+        print(pcolors("ERROR:", 'ERROR'))
+        print("No download link detected in response. \n"
+              "Response format is not understood, "
+              "or file may no be available on this mirror.")
+        return False
+    elif len(possibleDLLinkLst) > 1:
+        print(pcolors("WARNING:", 'WARNING'))
+        print("Multiple download links found. \n"
+              "They are: ")
+        for lnk in possibleDLLinkLst:
+            print(lnk)
+        print(f"{pcolors('WARNING:', 'WARNING')} Using only the first link")
+        possibleDLLinkLst = possibleDLLinkLst[:1]
+    return possibleDLLinkLst[0]
+
+
+def fetchRecFromMirror(recIdentifier: str,
+                       mirrorURL: str,
+                       recURLFetcher: Callable[str, str],
+                       rqGetKwargDict: dict) -> bool:
+    docURL = recURLFetcher(recIdentifier, mirrorURL)
+    fileHandle = getTargetFileHandle(args.dir,
+                                     docURL,
+                                     args.output)
+    if fileHandle is False:
+        quit(1)
+    else:
+        return downloadFileToPath(docURL,
+                                  fileHandle,
+                                  rqGetKwargDict)
+
+
+if queryType == 'doi':
+    if not any(fetchRecFromMirror(args.doi,
+                                  mirrorURL,
+                                  getDOIRecordURL,
+                                  {'proxies': proxyDict,
+                                   'headers': {'User-Agent': args.useragent}})
+               for mirrorURL
+               in args.mirror):
+        print(f"{pcolors('Download failed:', 'ERROR')} no mirror seems to "
+              "have this document")
+        quit(5)
+elif queryType == 'arxiv':
+    if not fetchRecFromMirror(args.doi,
+                              'https://arxiv.org/pdf/',
+                              getArXivRecordURL,
+                              {}):
+        print(f"{pcolors('Download failed:', 'ERROR')} unable to fetch "
+              "this document from arXiv")
+        quit(5)
