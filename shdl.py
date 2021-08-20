@@ -10,10 +10,6 @@ import unicodedata as ud
 from html import unescape
 # for arxiv metadata parsing
 from xml.etree import ElementTree as eTree
-# for type hint
-from typing import Union, NoReturn
-from io import BufferedWriter
-from collections.abc import Callable
 
 
 # parser setup
@@ -120,9 +116,9 @@ if args.piping:
 
 
 # print colors for xterm-256color
-def pcolors(msg: str,
-            msgType: str,
-            colorDisplay: bool = not args.nocolor) -> str:
+def pcolors(msg,
+            msgType,
+            colorDisplay=not args.nocolor):
     if not colorDisplay:
         return msg
     frontColorSeq = {
@@ -137,12 +133,12 @@ def pcolors(msg: str,
     return f"{frontColorSeq}{msg}\033[0m"
 
 
-def infoPrint(msg, *args, printSuppress=args.piping, **kwargs) -> NoReturn:
+def infoPrint(msg, *args, printSuppress=args.piping, **kwargs):
     if not printSuppress:
         print(msg, *args, **kwargs)
 
 
-def humanByteUnitString(s: int) -> str:
+def humanByteUnitString(s):
     if s >= 1024 ** 2:
         return f"{s / (1024 ** 2) :.2f} MB"
     elif s >= 1024:
@@ -151,14 +147,14 @@ def humanByteUnitString(s: int) -> str:
         return f"{s} B"
 
 
-def verbosePrint(msg: str,
-                 msgVerboseLevel: int = 1,
-                 configVerboseLevel: int = args.verbose) -> NoReturn:
+def verbosePrint(msg,
+                 msgVerboseLevel=1,
+                 configVerboseLevel=args.verbose):
     if msgVerboseLevel <= configVerboseLevel:
         infoPrint(msg)
 
 
-def transformToAuthorStr(authorList) -> str:
+def transformToAuthorStr(authorList):
     # authorList assumed (given name, family name)
     return ', '.join(''.join((gNamePart
                               if len(gNamePart) <= 1 or not gNamePart.isalpha()
@@ -187,7 +183,7 @@ stopwordLst = (
 
 
 # TODO better method?
-def transformToTitle(s: str) -> str:
+def transformToTitle(s):
     wordList = re.split(r'( |-)\b', s)
     if len(wordList) <= 1:
         return s
@@ -203,7 +199,7 @@ def transformToTitle(s: str) -> str:
         )
 
 
-def sanitizeFilename(s: str) -> str:
+def sanitizeFilename(s):
     return ' '.join(ud.normalize(
         'NFKD',
         s
@@ -214,7 +210,7 @@ def sanitizeFilename(s: str) -> str:
     ).encode('ASCII', 'ignore').decode().split(None))
 
 
-def checkMetaInfoResponseValidity(res: rq.Response, metaType: str) -> bool:
+def checkMetaInfoResponseValidity(res, metaType):
     if metaType == 'doi':
         return res.status_code == 200 \
             and res.headers['content-type'] == ('application/'
@@ -226,8 +222,8 @@ def checkMetaInfoResponseValidity(res: rq.Response, metaType: str) -> bool:
         raise ValueError(f"Unknown metaType {metaType}")
 
 
-def getMetaInfoFromResponse(res: rq.Response,
-                            metaType: str):
+def getMetaInfoFromResponse(res,
+                            metaType):
     if metaType == 'doi':
         metaDict = res.json()
         return (
@@ -354,11 +350,9 @@ if args.output is None and args.autoname:
     infoPrint("Autopatched title: " + pcolors(args.output, 'PATH'))
 
 
-def getTargetFileHandle(
-    dlDir: pathlib.Path,
-    targetURL: str,
-    decidedFilename: Union[None, str]
-) -> Union[BufferedWriter, bool]:
+def getTargetFileHandle(dlDir,
+                        targetURL,
+                        decidedFilename):
     if decidedFilename is None:
         decidedFilename = urlparse(targetURL).path.rsplit('/', 1)[-1]
     else:
@@ -382,9 +376,9 @@ def getTargetFileHandle(
     return fHandle
 
 
-def downloadFileToPath(targetURL: str,
-                       openedFileHandle: BufferedWriter,
-                       rqGetKwargDict: dict) -> bool:
+def downloadFileToPath(targetURL,
+                       openedFileHandle,
+                       rqGetKwargDict):
     # assumed openedFileHandle is opened and valid for writing
     # openedFileHandle is automatically closed
     if args.dryrun:
@@ -422,7 +416,7 @@ def downloadFileToPath(targetURL: str,
     return True
 
 
-def getArXivRecordURL(identifierStr: str, mirrorURL: str) -> str:
+def getArXivRecordURL(identifierStr, mirrorURL):
     # TODO check if alright
     return urljoin(mirrorURL, identifierStr + '.pdf')
 
@@ -434,7 +428,7 @@ reDOIExtractPattern = re.compile(
 )
 
 
-def getDOIRecordURL(identifierStr: str, mirrorURL: str) -> Union[str, bool]:
+def getDOIRecordURL(identifierStr, mirrorURL):
     verbosePrint("Checking if mirror is online ...")
     try:
         if rq.get(mirrorURL,
@@ -499,10 +493,10 @@ def getDOIRecordURL(identifierStr: str, mirrorURL: str) -> Union[str, bool]:
     return possibleDLLinkLst[0]
 
 
-def fetchRecFromMirror(recIdentifier: str,
-                       mirrorURL: str,
-                       recURLFetcher: Callable[str, Union[bool, str]],
-                       rqGetKwargDict: dict) -> bool:
+def fetchRecFromMirror(recIdentifier,
+                       mirrorURL,
+                       recURLFetcher,
+                       rqGetKwargDict):
     docURL = recURLFetcher(recIdentifier, mirrorURL)
     if docURL is False:
         return False
