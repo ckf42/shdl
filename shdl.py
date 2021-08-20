@@ -86,7 +86,7 @@ parser.add_argument("--autoname",
                     "Has lower priority than --output")
 parser.add_argument("--nocolor",
                     action='store_true',
-                    help="Surpress color display")
+                    help="Suppress color display")
 parser.add_argument("--verbose", "-v",
                     action='count',
                     default=0,

@@ -4,14 +4,21 @@ A script to fetch file by their identifiers
 
 ## Features
 
-* Fetch document with DOI
+* Fetch document with DOI and arXiv identifier
 * Custom proxy
 * Custom mirrors
 * Decide file name automatically
 
 ## Install
 
-TODO: add install here
+Only available as a python script for now. To use it, you will need to install:
+
+* Python 3
+* [requests](https://pypi.org/project/requests/ "PyPI page")
+    * you can install it by `pip install --user requests`
+    * if you need to use socks proxy (e.g. TOR), you should also install it with socks extra `pip install --user requests[socks]`
+
+Standalone executable is not yet available.
 
 ## Usage
 
@@ -63,32 +70,39 @@ Will always use HTTPS if not specified
 
 `shdl 10.1109/5.771073 --output topsecret` → `topsecret.pdf`
 
-`shdl 10.1109/5.771073 --autoname` → `[N. Paskin, doi 10.1109 5.771073]Toward Unique Identifiers.pdf`
+`shdl 10.1109/5.771073 --autoname` → `[N. Paskin, doi 10.1109@5.771073]Toward Unique Identifiers.pdf`
+
+### arXiv support
+
+`shdl arxiv:1501.00001`
+
+`shdl https://arxiv.org/abs/1501.00001`
 
 ## Dependencies
 
 * Python 3 (tested on 3.8+)
-* [requests[socks]](https://pypi.org/project/requests/ "PyPI") (tested on 2.26.0)
+* [requests[socks]](https://pypi.org/project/requests/ "PyPI page") (tested on 2.26.0)
 
 ## TODO
 
 ### Features
 
-* Support for arXiv (in testing stage)
 * Support for PMID
 * Direct search with e.g. Google Scholar?
-* Surpress stdout and print output path only
+* Suppress stdout and print output path only (for output piping)
+* Allow custom format for `--autoname`
 
 ### Usability
 
-* check network connectivity when no proxy is configured
+* Check network connectivity when no proxy is configured
+* Export as (cross-platform?) standalone executable
 * Provide module integration
-* Export as (cross-platform) executable
 * Optimize dependencies
     * Use urllib instead of requests?
 
 ### Testing
 
+* Add test case for arXiv
 * Test on other versions of Python
 * Check compatibility on other OS
 
