@@ -115,7 +115,7 @@ def pcolors(msg: str,
         'ERROR': '\033[91m',
         'BOLD': '\033[1m',
         'UNDERLINE': '\033[4m',
-        'ENDC': '\033[0m',
+        # 'ENDC': '\033[0m',
     }.get(msgType.upper(), '\033[0m')
     return f"{frontColorSeq}{msg}\033[0m"
 
@@ -233,8 +233,7 @@ else:
         print(pcolors("ERROR:", 'ERROR'), end=' ')
         print(str(joinedDir), "is not a valid directory")
         quit(1)
-verbosePrint(
-    f"Download directory: {pcolors(str(args.dir), 'PATH')}")
+verbosePrint(f"Download directory: {pcolors(str(args.dir), 'PATH')}")
 
 if args.mirror is None:
     # apply default
@@ -284,7 +283,7 @@ queryType = next((qType for qType in ('doi', 'arxiv')
 # if queryType is None:
 #     print(f"{pcolors('ERROR:', 'ERROR')} Cannot decide repo type")
 #     quit(4)
-verbosePrint(f"Query string type: {queryType}")
+verbosePrint(f"Query string type: {pcolors(queryType, 'DOI')}")
 reDOISanitizePattern, metaQueryURL, reqHeader = {
     'doi': (
         '^(https?://)?(dx\\.|www\\.)?doi(\\.org/|:|/)\\s*',
@@ -302,7 +301,7 @@ args.doi = re.sub(reDOISanitizePattern,
                   '',
                   args.doi.strip(),
                   flags=re.IGNORECASE)
-verbosePrint(f"Sanitized query: {args.doi}")
+verbosePrint(f"Sanitized query: {pcolors(args.doi, 'DOI')}")
 metaQueryRes = rq.get(metaQueryURL.format(id=args.doi),
                       headers=reqHeader)
 if not checkMetaInfoResponseValidity(metaQueryRes, queryType):
@@ -317,7 +316,7 @@ if args.output is None and args.autoname:
         f"{queryType} {args.doi.replace('/', '@')}]"
         + transformToTitle(metaDataTuple[1])
     )
-    print("Autopatched title: " + args.output)
+    print("Autopatched title: " + pcolors(args.output, 'PATH'))
 
 
 def getTargetFileHandle(
@@ -334,13 +333,14 @@ def getTargetFileHandle(
         print(pcolors("ERROR:", 'ERROR'), end=" ")
         print("Cannot download to path exceeding 250 characters")
         return False
-    verbosePrint(f"Downloading to {str(dlPath)}")
+    verbosePrint(f"Downloading to {pcolors(str(dlPath), 'PATH')}")
     try:
         fHandle = dlPath.open('wb')
     except (PermissionError, FileNotFoundError):
         # TODO better handling of exceptions
         print(pcolors("ERROR:", 'ERROR'), end=" ")
-        print(f"Cannot write to target path \"{str(dlPath)}\"")
+        print("Cannot write to "
+              f"target path \"{pcolors(str(dlPath), 'PATH')}\"")
         return False
     return fHandle
 
@@ -354,7 +354,7 @@ def downloadFileToPath(targetURL: str,
     downloadedSize = 0
     lastLineLen = 0
     dlMsg = None
-    verbosePrint(f"Downloading from {targetURL} ...")
+    verbosePrint(f"Downloading from {pcolors(targetURL, 'PATH')} ...")
     with rq.get(targetURL, stream=True, **rqGetKwargDict) as dlResponse:
         fileSize = dlResponse.headers.get('Content-Length', None)
         if fileSize is not None:
@@ -411,14 +411,18 @@ def getDOIRecordURL(identifierStr: str, mirrorURL: str) -> str:
         print(f"Cannot connect to {mirrorURL}")
         return False
     # query mirror
-    verbosePrint("Querying " + urljoin(mirrorURL, identifierStr) + " ...")
-    firstResponse = rq.get(urljoin(mirrorURL, identifierStr),
+    thisQueryURL = urljoin(mirrorURL, identifierStr)
+    verbosePrint("Querying "
+                 + pcolors(thisQueryURL, 'PATH')
+                 + " ...")
+    firstResponse = rq.get(thisQueryURL,
                            proxies=proxyDict,
                            headers={'User-Agent': args.useragent})
     # TODO better method of checking first return
     if (not firstResponse.headers['Content-Type'].startswith('text/html')) \
             or len(firstResponse.text.strip('\n ')) == 0:
-        print("Empty response. Maybe no search result?")
+        print(f"{pcolors('ERROR:', 'ERROR')} Empty response. "
+              "Maybe no search result?")
         return False
     # extract download link
     verbosePrint("Findind download link from response ...")
@@ -434,7 +438,7 @@ def getDOIRecordURL(identifierStr: str, mirrorURL: str) -> str:
                          .replace(r'\\', '\\').replace(r'\/', '/'),
                          scheme="https")
             ).rsplit("#")[0]
-            verbosePrint(f"Link found: {dlURL}")
+            verbosePrint(f"Link found: {pcolors(dlURL, 'PATH')}")
             possibleDLLinkLst.append(dlURL)
     if len(possibleDLLinkLst) == 0:
         print(pcolors("ERROR:", 'ERROR'))
