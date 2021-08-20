@@ -166,17 +166,22 @@ stopwordLst = (
 
 # TODO better method?
 def transformToTitle(s: str) -> str:
-    wordsInSent = re.split('\\b',
-                           re.sub('</?mml.+?>', '', s.strip(' ,."\'')))
-    if len(wordsInSent) <= 1:
+    wordList = re.split(r'( |-)\b', s)
+    if len(wordList) <= 1:
         return s
-    return wordsInSent[1] + ''.join(
-        (w.lower() if w.lower() in stopwordLst else w.capitalize())
-        for w in wordsInSent[2:]
-    )
+    else:
+        return (wordList[0]
+                if wordList[0].isupper()
+                else wordList[0].capitalize()) \
+            + ''.join(
+            map(lambda w: w.lower()
+                if w.lower() in stopwordLst
+                else (w if w.isupper() else w.capitalize()),
+                wordList[1:])
+        )
 
 
-def sanitizeString(s: str) -> str:
+def sanitizeFilename(s: str) -> str:
     # TODO use unidecode.unidecode instead?
     return ucNormalize(
         'NFKD',
@@ -205,7 +210,10 @@ def getMetaInfoFromResponse(res: rq.Response,
         return (
             tuple((aDict['given'], aDict['family'])
                   for aDict in metaDict['author']),
-            metaDict['title']
+            # in some case title put html mml tag for math display
+            # json should mitigate this now?
+            # TODO check if this is necessary
+            re.sub('</?mml.+?>', '', metaDict['title'])
         )
     elif metaType == 'arxiv':
         aStr = '{http://www.w3.org/2005/Atom}'
@@ -315,7 +323,7 @@ if args.output is None and args.autoname:
     metaDataTuple = getMetaInfoFromResponse(metaQueryRes, queryType)
     verbosePrint(f"author string: {metaDataTuple[0]}")
     verbosePrint(f"title string: {metaDataTuple[1]}")
-    args.output = sanitizeString(
+    args.output = sanitizeFilename(
         f"[{transformToAuthorStr(metaDataTuple[0])}, "
         f"{queryType} {args.doi.replace('/', '@')}]"
         + transformToTitle(metaDataTuple[1])
