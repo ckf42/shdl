@@ -6,8 +6,8 @@ from argparse import ArgumentParser as aAP
 from urllib.parse import urljoin, urlunparse, urlparse
 import pathlib
 # for filename normalization
-# TODO use unidecode instead?
-from unicodedata import normalize as ucNormalize
+import unicodedata as ud
+from html import unescape
 # for arxiv metadata parsing
 from xml.etree import ElementTree as eTree
 # for type hint
@@ -204,13 +204,14 @@ def transformToTitle(s: str) -> str:
 
 
 def sanitizeFilename(s: str) -> str:
-    # TODO use unidecode.unidecode instead?
-    return ucNormalize(
+    return ' '.join(ud.normalize(
         'NFKD',
         s
-        .translate(str.maketrans({k: '' for k in '/<>:\"\\|?*'}))
-        .translate(str.maketrans({'’': '\''}))
-    ).encode('ASCII', 'ignore').decode()
+        .translate(str.maketrans({k: ' ' for k in '/<>:\"\\|?*'}))
+        .translate(str.maketrans({
+            '’': '\''
+        }))  # unicode non Sm category replacement
+    ).encode('ASCII', 'ignore').decode().split(None))
 
 
 def checkMetaInfoResponseValidity(res: rq.Response, metaType: str) -> bool:
@@ -232,10 +233,12 @@ def getMetaInfoFromResponse(res: rq.Response,
         return (
             tuple((aDict['given'], aDict['family'])
                   for aDict in metaDict['author']),
-            # in some case title put html mml tag for math display
-            # json should mitigate this now?
-            # TODO check if this is necessary
-            re.sub('</?mml.+?>', '', metaDict['title'])
+            ''.join((f' {ud.name(c).title()}'
+                     if not c.isascii() and ud.category(c) == 'Sm'
+                     else c)
+                    for c
+                    in re.sub('</?.+?>', '', unescape(metaDict['title'])))
+
         )
     elif metaType == 'arxiv':
         aStr = '{http://www.w3.org/2005/Atom}'
@@ -244,9 +247,7 @@ def getMetaInfoFromResponse(res: rq.Response,
             tuple(tuple(ele.text.rsplit(' ', 1))
                   for ele
                   in xmlEntryRoot.findall(f'{aStr}author/{aStr}name')),
-            re.sub('\\s+',
-                   ' ',
-                   xmlEntryRoot.find(f'{aStr}title').text.replace('\n', ''))
+            ' '.join(xmlEntryRoot.find(f'{aStr}title').text.split(None))
         )
     else:
         raise ValueError(f"Unknown metaType {metaType}")
