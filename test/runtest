@@ -2,31 +2,40 @@
 # curDir=$(cd $(dirname "$0") && pwd) 
 cd test
 python3 ../shdl.py -h 
-echo ""
+echo "Waiting for next test"
+sleep 5
 
 python3 ../shdl.py https://doi.org/10.1109/5.771073
-echo ""
+echo "Waiting for next test"
+sleep 5
 
 python3 ../shdl.py https://doi.org/10.1109/5.771073 -v
-echo ""
+echo "Waiting for next test"
+sleep 5
 
 python3 ../shdl.py https://doi.org/10.1109/5.771073 -v --autoname
-echo ""
+echo "Waiting for next test"
+sleep 5
 
 python3 ../shdl.py https://doi.org/10.1109/5.771073 -o test -v
-echo ""
+echo "Waiting for next test"
+sleep 5
 
 mkdir -p sample && python3 ../shdl.py https://doi.org/10.1109/5.771073 -d sample -o test -v
-echo ""
+echo "Waiting for next test"
+sleep 5
 
 python3 ../shdl.py https://arxiv.org/abs/1501.00001 -v
-echo ""
+echo "Waiting for next test"
+sleep 5
 
 python3 ../shdl.py https://arxiv.org/abs/1501.00001 -v --autoname
-echo ""
+echo "Waiting for next test"
+sleep 5
 
 python3 ../shdl.py https://arxiv.org/abs/1501.00001 -o arxivTest -v
-echo ""
+echo "Waiting for next test"
+sleep 5
 
-mkdir -p sample && python3 ../shdl.py https://doi.org/10.1109/5.771073 -d sample -o arxivTest -v
+mkdir -p sample && python3 ../shdl.py https://arxiv.org/abs/1501.00001 -d sample -o arxivTest -v
 echo ""
