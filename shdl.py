@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
+from src.CLIArgParser import *
 from src.CommonUtil import *
 from src.StringTransformer import *
 from src.LocalFileHandler import *
-from src.RepoHandler.RegisteredRepo import registered_repo_list
+from src.RepoHandler.RegisteredRepo import *
 
 if __name__ != '__main__':
     quit()
@@ -11,78 +12,71 @@ if __name__ != '__main__':
 verbose_print(cliArg, msg_verbose_level=2)
 
 # check repo
-query_obj = next((obj
-                  for cls in registered_repo_list
-                  if (obj := cls(cliArg.doi)).is_query_valid),
-                 None)
-if query_obj is None:
+repo_obj = next((obj
+                 for cls in registered_repo_list
+                 if (obj := cls(cliArg.doi)).is_query_valid),
+                None)
+if repo_obj is None:
+    # error_reporter.quit_now(ErrorType.QUERY_INVALID,
+    #                         error_msg="Input query is not recognized")
+    info_print(PColor.WARNING("WARNING:"), end=" ")
+    info_print("Input query format not recognized. "
+               "Assuming it is sanitized DOI")
+    repo_obj = DOIRepoHandler('doi: ' + cliArg.doi)
+verbose_print(f"Detected identifier type: {repo_obj.repo_name}")
+verbose_print(f"Sanitized identifier: {repo_obj.identifier}")
+
+# check metadata
+verbose_print("Metadata response: " + str(repo_obj.metadata), 2)
+if not repo_obj.is_meta_response_valid:
     error_reporter.quit_now(ErrorType.QUERY_INVALID,
-                            error_msg="Input query is not recognized")
-else:
-    verbose_print(f"Detected identifier type: {query_obj.repo_name}")
+                            error_msg="No metadata found")
 
-# check identifier
-
-quit(0)
-# Realm of deprecation
-# check repo
-query_type_cls = next((cls
-                       for cls in registered_repo_list
-                       if cls.is_query_valid(cliArg.doi)), None)
-if query_type_cls is None:
-    error_reporter.quit_now(ErrorType.QUERY_INVALID,
-                            error_msg="Input query is not recognized")
-else:
-    verbose_print(
-        f"Detected identifier type: {query_type_cls.get_repo_name()}")
-
-# extract id
-identifier_str = query_type_cls.get_identifier(cliArg.doi)
-verbose_print(f"Sanitized identifier: {identifier_str}")
-metadata_res = query_type_cls.get_metadata(identifier_str)
-if metadata_res is False:
-    error_reporter.quit_now(
-        ErrorType.QUERY_INVALID,
-        error_msg=f"No metadata for identifier {identifier_str}"
-    )
-verbose_print(str(metadata_res), msg_verbose_level=2)
-
-# check autoname
+# patch autoname
 proposedName = cliArg.output
 if proposedName is None and cliArg.autoname:
-    if metadata_res is None:
+    if repo_obj.metadata is None:
         info_print(PColor.WARNING("WARNING:"), end=" ")
-        info_print(f"Unable to fetch metadata for identifier {identifier_str}")
+        info_print("Unable to fetch metadata "
+                   f"for identifier {repo_obj.identifier}")
         info_print("Fallback to remote name")
         cliArg.autoname = False  # not really necessary
     else:
+        assert isinstance(repo_obj.metadata, dict)
+        assert 'title' in repo_obj.metadata
+        assert 'author' in repo_obj.metadata
         proposedTitle = transform_to_title(
-            convert_math_symbol_to_name(metadata_res['title']))
-        proposedAuthorStr = transform_to_author_str(metadata_res['author'])
-        proposedName = sanitize_filename(f"[{proposedAuthorStr}]"
-                                         + proposedTitle)
+            convert_math_symbol_to_name(repo_obj.metadata['title']))
+        proposedAuthStr = transform_to_author_str(
+            repo_obj.metadata['author'])
+        proposedName = sanitize_filename(
+            "["
+            + proposedAuthStr
+            + ", "
+            + repo_obj.repo_name.lower()
+            + " "
+            + repo_obj.identifier.replace('/', '@')
+            + "]"
+            + proposedTitle
+        )
         # check validity later when dl link is fetched as ext is yet not known
-verbose_print(proposedName, 2)
+    verbose_print("Proposed name: " + PColor.PATH(proposedName), 2)
 
 # get download link
 dlURL = next((lnk
-              for mirrorURL in query_type_cls.get_mirror_list()
-              if (lnk := query_type_cls
-                  .get_download_url(identifier_str,
-                                    mirrorURL)) is not None),
+              for mirrorURL in repo_obj.mirror_list
+              if (lnk := repo_obj.get_download_url(mirrorURL)) is not None),
              None)
 if dlURL is None:
     error_reporter.quit_now(ErrorType.FILE_NOT_FOUND)
-verbose_print(dlURL, 2)
+verbose_print("Download link: " + PColor.PATH(dlURL), 2)
 
-# ready download
+# download
 if proposedName is None:
-    proposedName = dlURL.rsplit('/', 1)[-1]
-else:
-    proposedName += '.' + dlURL.rsplit('.', 1)[-1]
-downloadPath = cliArg.dir / proposedName
-verbose_print(PColor.PATH(str(downloadPath)), 2)
+    proposedName = dlURL.rsplit('/', 1)[-1].rsplit('.', 1)[-1]
+downloadPath = cliArg.dir / (proposedName + '.' + dlURL.rsplit('.', 1)[-1])
+verbose_print("Download path: " + PColor.PATH(str(downloadPath)), 2)
 if not fetch_url_to_local_path(dlURL, downloadPath):
     error_reporter.quit_now(ErrorType.OUTPUT_ERROR,
-                            msg="Cannot write to " \
-                                + PColor.PATH(str(downloadPath)))
+                            error_msg="Cannot write to "
+                                      + PColor.PATH(str(downloadPath)))

@@ -94,16 +94,18 @@ cliArgParser.add_argument("--verbose", "-v",
 cliArg = cliArgParser.parse_args()
 
 # cliArg handling
-from CommonUtil import *
+from src.CommonUtil import *
 from urllib.parse import urlparse, urlunparse
 import requests as rq
 from html import unescape
 
 cliArg.doi = unescape(cliArg.doi)
 
-cliArg.dir = cliArg.dir.strip(" '\"")
+# check if dir is valid
 if cliArg.dir is None:
     cliArg.dir = '.'
+assert isinstance(cliArg.dir, str)
+cliArg.dir = cliArg.dir.strip(" '\"")
 try:
     cliArg.dir = (Path.cwd() / Path(cliArg.dir).expanduser()).resolve(True)
     if not cliArg.dir.is_dir():
@@ -113,6 +115,7 @@ except (NotADirectoryError, FileNotFoundError):
                             error_msg=f"{str(cliArg.dir)} is not "
                                       "a valid directory")
 
+# check mirror format
 if cliArg.mirror is None:
     # info_print(PColor.ERROR("Error:"), end=" ")
     # info_print("No mirror provided")
@@ -134,6 +137,7 @@ if cliArg.proxy is None:
     info_print("No proxy configured")
 verbose_print("Testing network connectivity ...")
 try:
+    pass
     rq.get('https://example.com',
            proxies=cliArg.proxy,
            headers={'User-Agent': cliArg.useragent})
@@ -153,3 +157,7 @@ except Exception as e:
 else:
     if cliArg.proxy is not None:
         verbose_print(f"Using proxy {cliArg.proxy['https']}")
+cliArg.rqKwargs = {
+    'proxies': cliArg.proxy,
+    'headers': {'User-Agent': cliArg.useragent, }
+}

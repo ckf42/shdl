@@ -11,17 +11,17 @@ class _BaseRepoHandler(ABC):
     # properties
     identifier = None
     is_query_valid = None
-    meta_response = None
+    metadata = None
     is_meta_response_valid = None
 
     # init
-    def __init__(self, raw_query_str: str) -> None:
+    def __init__(self, raw_query_str: str):
         self.identifier = self.get_identifier(raw_query_str)
         self.is_query_valid = (self.identifier is not None)
         if not self.is_query_valid:
             return
-        self.meta_response = self.get_metadata()
-        self.is_meta_response_valid = (self.meta_response is dict)
+        self.metadata = self.get_metadata()
+        self.is_meta_response_valid = self.metadata is not False
 
     # abstract properties
     @classmethod
@@ -67,7 +67,7 @@ class _BaseRepoHandler(ABC):
 
     @classmethod
     @abstractmethod
-    def is_meta_query_response_valid(cls, response_obj: rq_Response) -> bool:
+    def _is_meta_query_response_valid(cls, response_obj: rq_Response) -> bool:
         """
         Check if response for metadata is valid
 
@@ -98,9 +98,7 @@ class _BaseRepoHandler(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_download_url(self,
-                         mirror_link: str,
-                         **kwargs) -> Optional[str]:
+    def get_download_url(self, mirror_link: str) -> Optional[str]:
         """
         Get file download link
 
@@ -109,8 +107,6 @@ class _BaseRepoHandler(ABC):
 
         :param mirror_link: str.
             The URL of the mirror used to fetch the file
-        :param kwargs:
-            Additional parameter used for network requests
         :return: str, or None.
         """
         raise NotImplementedError

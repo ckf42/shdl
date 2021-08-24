@@ -29,16 +29,18 @@ class ArxivRepoHandler(_BaseRepoHandler):
             return None
 
     @classmethod
-    def is_meta_query_response_valid(cls, response_obj):
+    def _is_meta_query_response_valid(cls, response_obj):
         return response_obj.status_code == 200 \
                and 'http://arxiv.org/api/errors' not in response_obj.text
 
     def get_metadata(self):
+        verbose_print(f"Fetching metadata for type {self.repo_name}...")
         meta_query_res = rq.get(
-            'http://export.arxiv.org/api/query?id_list={id}'
-                .format(id=self.identifier)
+            'http://export.arxiv.org/api/query?id_list={id}'.format(
+                id=self.identifier
+            )
         )
-        if not self.is_meta_query_response_valid(meta_query_res):
+        if not self._is_meta_query_response_valid(meta_query_res):
             verbose_print(f"Response is not a valid {self.repo_name} response")
             return False
         atom_str = '{http://www.w3.org/2005/Atom}'
@@ -54,5 +56,5 @@ class ArxivRepoHandler(_BaseRepoHandler):
                                .text.split(None))
         }
 
-    def get_download_url(self, mirror_link, **kwargs):
+    def get_download_url(self, mirror_link):
         return urljoin(mirror_link, self.identifier + '.pdf')

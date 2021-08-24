@@ -1,7 +1,7 @@
 from enum import Enum, IntEnum, unique
 from typing import Optional, NoReturn
 
-from CLIArgParser import cliArg
+from src.CLIArgParser import *
 
 if __name__ == '__main__':
     quit()
@@ -15,7 +15,8 @@ class PColor(Enum):
     ERROR = '\033[91m'
     NULL = '\033[0m'
 
-    def __call__(self, msg: str, color_display: bool = not cliArg.nocolor) -> str:
+    def __call__(self, msg: str,
+                 color_display: bool = not cliArg.nocolor) -> str:
         # def __call__(self, *args, **kwargs):
         if not color_display:
             return msg
@@ -23,7 +24,8 @@ class PColor(Enum):
             return f"{self.value}{msg}\033[0m"
 
 
-def info_print(msg: str, *args, print_suppress: bool = cliArg.piping, **kwargs) -> None:
+def info_print(msg: str, *args, print_suppress: bool = cliArg.piping,
+               **kwargs) -> None:
     if not print_suppress:
         print(msg, *args, **kwargs)
 
@@ -67,23 +69,23 @@ class ErrorType(IntEnum):
 
 
 class ErrorReporterClass:
-    _error_list = list()
+    _error_buffer = list()
 
     def __init__(self):
-        self._error_list = list()
+        self._error_buffer = list()
 
     def add_new_error(self, error_code: ErrorType) -> None:
-        self._error_list.append(error_code)
+        self._error_buffer.append(error_code)
 
     def quit_now(self,
                  with_this_code: Optional[ErrorType] = None,
                  error_msg: Optional[str] = None) -> NoReturn:
         if with_this_code is not None:
-            self._error_list = [with_this_code, ]
-        if ErrorType.SUCCEED in self._error_list:
+            self._error_buffer = [with_this_code, ]
+        if ErrorType.SUCCEED in self._error_buffer:
             quit(0)
         else:
-            return_error_code = self._error_list[0]
+            return_error_code = self._error_buffer[0]
             info_print(PColor.ERROR.__call__("ERROR:")
                        + " "
                        + (return_error_code.description()

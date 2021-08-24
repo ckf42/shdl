@@ -4,8 +4,8 @@ import requests as rq
 from pathlib import Path
 from typing import Union
 
-from CommonUtil import *
-from CLIArgParser import cliArg
+from src.CommonUtil import *
+from src.CLIArgParser import *
 
 if __name__ == '__main__':
     quit()
@@ -14,7 +14,7 @@ if __name__ == '__main__':
 def _get_local_file_handler(write_path_obj: Path) -> Union[
     BufferedWriter, bool]:
     if len(str(write_path_obj)) >= 250:
-        info_print(PColor.ERROR("ERROR: "), end=" ")
+        info_print(PColor.ERROR("ERROR:"), end=" ")
         info_print("Target download path is too long")
         error_reporter.add_new_error(ErrorType.OUTPUT_ERROR)
         return False
