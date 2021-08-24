@@ -1,10 +1,18 @@
+from io import BufferedWriter
+
 import requests as rq
+from pathlib import Path
+from typing import Union
 
 from CommonUtil import *
 from CLIArgParser import cliArg
 
+if __name__ == '__main__':
+    quit()
 
-def _get_local_file_handler(write_path_obj):
+
+def _get_local_file_handler(write_path_obj: Path) -> Union[
+    BufferedWriter, bool]:
     if len(str(write_path_obj)) >= 250:
         info_print(PColor.ERROR("ERROR: "), end=" ")
         info_print("Target download path is too long")
@@ -25,10 +33,12 @@ def _get_local_file_handler(write_path_obj):
     return f_handle
 
 
-def _download_file_to_local(target_url, local_file_handle, **kwargs):
+def _download_file_to_local(target_url: str,
+                            local_file_handle: BufferedWriter,
+                            **kwargs) -> bool:
     if cliArg.dryrun:
         # just to be safe
-        local_file_handle.close()
+        assert local_file_handle.closed
         return True
     downloaded_size = 0
     last_line_len = 0
@@ -60,7 +70,9 @@ def _download_file_to_local(target_url, local_file_handle, **kwargs):
     return True
 
 
-def fetch_url_to_local_path(target_url, target_local_path_obj, **kwargs):
+def fetch_url_to_local_path(target_url: str,
+                            target_local_path_obj: Path,
+                            **kwargs) -> bool:
     file_handle = _get_local_file_handler(target_local_path_obj)
     if isinstance(file_handle, bool):
         return file_handle

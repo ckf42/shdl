@@ -93,8 +93,15 @@ cliArgParser.add_argument("--verbose", "-v",
                           help="Display verbose information")
 cliArg = cliArgParser.parse_args()
 
+# cliArg handling
 from CommonUtil import *
+from urllib.parse import urlparse, urlunparse
+import requests as rq
+from html import unescape
 
+cliArg.doi = unescape(cliArg.doi)
+
+cliArg.dir = cliArg.dir.strip(" '\"")
 if cliArg.dir is None:
     cliArg.dir = '.'
 try:
@@ -102,6 +109,47 @@ try:
     if not cliArg.dir.is_dir():
         raise NotADirectoryError
 except (NotADirectoryError, FileNotFoundError):
-    info_print(PColor.ERROR("ERROR:"), end=" ")
-    info_print(f"{str(cliArg.dir)} is not a valid directory")
+    error_reporter.quit_now(ErrorType.ARG_INVALID,
+                            error_msg=f"{str(cliArg.dir)} is not "
+                                      "a valid directory")
+
+if cliArg.mirror is None:
+    # info_print(PColor.ERROR("Error:"), end=" ")
+    # info_print("No mirror provided")
+    # error_reporter.quit_now(ErrorType.ARG_INVALID)
+    cliArg.mirror = ("https://sci-hub.se/",)
+else:
+    cliArg.mirror = tuple(
+        # enforce https if not specified
+        urlunparse(urlparse(mirrorURL, scheme="https"))
+        for mirrorURL in cliArg.mirror
+    )
+
+# check network and proxy
+cliArg.proxy = {scheme: cliArg.proxy for scheme in ('http', 'https')} \
+    if cliArg.proxy is not None and cliArg.proxy != '' \
+    else None
+if cliArg.proxy is None:
+    info_print(PColor.WARNING("WARNING:"), end=" ")
+    info_print("No proxy configured")
+verbose_print("Testing network connectivity ...")
+try:
+    rq.get('https://example.com',
+           proxies=cliArg.proxy,
+           headers={'User-Agent': cliArg.useragent})
+except rq.exceptions.ProxyError:
+    info_print(PColor.ERROR('ERROR:') + " Proxy config is invalid")
     error_reporter.quit_now(ErrorType.ARG_INVALID)
+except rq.ConnectionError:
+    info_print(PColor.ERROR("ERROR:") + " Failed to connect to the internet")
+    if cliArg.proxy is not None:
+        info_print("Maybe proxy is not setup correctly?")
+    error_reporter.quit_now(ErrorType.NETWORK_ERROR)
+except Exception as e:
+    info_print(PColor.ERROR("ERROR:")
+               + " Unknown error occurred when testing network connectivity")
+    info_print(str(e))
+    error_reporter.quit_now(ErrorType.NETWORK_ERROR)
+else:
+    if cliArg.proxy is not None:
+        verbose_print(f"Using proxy {cliArg.proxy['https']}")

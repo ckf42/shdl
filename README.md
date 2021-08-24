@@ -16,7 +16,8 @@ Only available as a python script for now. To use it, you will need to install:
 * Python 3
 * [requests](https://pypi.org/project/requests/ "PyPI page")
     * you can install it by `pip install --user requests`
-    * if you need to use socks proxy (e.g. TOR), you should also install it with socks extra `pip install --user requests[socks]`
+    * if you need to use socks proxy (e.g. TOR), you should also install it with socks
+      extra `pip install --user requests[socks]`
 
 Standalone executable is not yet available.
 
@@ -84,6 +85,11 @@ Will always use HTTPS if not specified
 * [requests[socks]](https://pypi.org/project/requests/ "PyPI page") (tested on 2.26.0)
 
 ## TODO
+
+### Branch TODO
+
+* Use member method instead of class method for RepoHandler
+* Better error handler
 
 ### Features
 
