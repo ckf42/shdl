@@ -39,7 +39,7 @@ if proposedName is None and cliArg.autoname:
         info_print(PColor.WARNING("WARNING:"), end=" ")
         info_print("Unable to fetch metadata "
                    f"for identifier {repo_obj.identifier}")
-        info_print("Fallback to remote name")
+        info_print("Autoname falls back to remote name")
         cliArg.autoname = False  # not really necessary
     else:
         assert isinstance(repo_obj.metadata, dict)
@@ -60,7 +60,7 @@ if proposedName is None and cliArg.autoname:
             + proposedTitle
         )
         # check validity later when dl link is fetched as ext is yet not known
-    verbose_print("Proposed name: " + PColor.PATH(proposedName), 2)
+        verbose_print("Proposed name: " + PColor.PATH(proposedName), 2)
 
 # get download link
 dlURL = next((lnk
@@ -73,7 +73,7 @@ verbose_print("Download link: " + PColor.PATH(dlURL), 2)
 
 # download
 if proposedName is None:
-    proposedName = dlURL.rsplit('/', 1)[-1].rsplit('.', 1)[-1]
+    proposedName = dlURL.rsplit('/', 1)[-1].rsplit('.', 1)[0]
 downloadPath = cliArg.dir / (proposedName + '.' + dlURL.rsplit('.', 1)[-1])
 verbose_print("Download path: " + PColor.PATH(str(downloadPath)), 2)
 if not fetch_url_to_local_path(dlURL, downloadPath):
