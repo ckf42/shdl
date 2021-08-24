@@ -11,6 +11,21 @@ if __name__ != '__main__':
 verbose_print(cliArg, msg_verbose_level=2)
 
 # check repo
+query_obj = next((obj
+                  for cls in registered_repo_list
+                  if (obj := cls(cliArg.doi)).is_query_valid),
+                 None)
+if query_obj is None:
+    error_reporter.quit_now(ErrorType.QUERY_INVALID,
+                            error_msg="Input query is not recognized")
+else:
+    verbose_print(f"Detected identifier type: {query_obj.repo_name}")
+
+# check identifier
+
+quit(0)
+# Realm of deprecation
+# check repo
 query_type_cls = next((cls
                        for cls in registered_repo_list
                        if cls.is_query_valid(cliArg.doi)), None)

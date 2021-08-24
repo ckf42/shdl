@@ -9,9 +9,10 @@ if __name__ == '__main__':
     quit()
 
 
-class DOIRepoHandler(_BaseRepoHandler):
+# Realm of deprecation
+class _DOIRepoHandler(__BaseRepoHandler):
     @classmethod
-    def get_repo_name(cls):
+    def repo_name(cls):
         return 'DOI'
 
     @classmethod
@@ -32,13 +33,13 @@ class DOIRepoHandler(_BaseRepoHandler):
             return None
 
     @classmethod
-    def get_query_extract_pattern(cls):
+    def query_extract_pattern(cls):
         return '^(https?://)?(dx\\.|www\\.)?doi(\\.org/|:|/)\\s*'
 
     @classmethod
     def get_metadata(cls, identifier_str):
         meta_query_res = rq.get(
-            cls.get_query_extract_pattern().format(id=identifier_str),
+            cls.query_extract_pattern().format(id=identifier_str),
             headers={"Accept": "application/vnd.citationstyles.csl+json"}
         )
         if not cls.is_meta_query_response_valid(meta_query_res):

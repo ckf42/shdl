@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 from requests import Response as rq_Response
-from re import match as re_match
-from re import IGNORECASE
 
 from typing import Optional, Union
 
@@ -10,70 +8,49 @@ if __name__ == '__main__':
 
 
 class _BaseRepoHandler(ABC):
+    # properties
+    identifier = None
+    is_query_valid = None
+    meta_response = None
+    is_meta_response_valid = None
+
+    # init
+    def __init__(self, raw_query_str: str) -> None:
+        self.identifier = self.get_identifier(raw_query_str)
+        self.is_query_valid = (self.identifier is not None)
+        if not self.is_query_valid:
+            return
+        self.meta_response = self.get_metadata()
+        self.is_meta_response_valid = (self.meta_response is dict)
+
+    # abstract properties
     @classmethod
+    @property
     @abstractmethod
-    def get_repo_name(cls) -> str:
+    def repo_name(cls) -> str:
         """Name of repo"""
-        pass
+        raise NotImplementedError
 
     @classmethod
+    @property
     @abstractmethod
-    def get_query_extract_pattern(cls) -> str:
-        """Get the regex pattern in str to clean raw query"""
-        pass
+    def query_extract_pattern(cls) -> str:
+        """Get the regex pattern in str to clear raw query"""
+        raise NotImplementedError
 
     @classmethod
+    @property
     @abstractmethod
-    def get_metadata(cls, identifier_str: str) -> Union[bool, dict, None]:
+    def mirror_list(cls) -> tuple[str]:
         """
-        Get metadata from identifier
+        Get a list of possible mirror URL for file download
 
-        :param identifier_str: str
-            The target identifier
-        :return: bool (False), None or dict.
-        If able to fetch both author and title from metadata,
-            returns a dict with key 'author' and 'title'.
-            'author' is a tuple of dict[str] with key 'given' and 'family'.
-        If able to fetch metadata but unable to parse for author and title,
-            returns None.
-        Otherwise (if unable to get metadata), return False
+        :return: tuple[str]
+            A tuple of mirror URL
         """
-        pass
+        raise NotImplementedError
 
-    @classmethod
-    @abstractmethod
-    def is_meta_query_response_valid(cls, response_obj: rq_Response) -> bool:
-        """
-        Check if response for metadata is valid
-
-        :param response_obj: requests.Response
-            The response to check
-        :return: bool.
-            Whether the response if valid
-        """
-        pass
-
-    @classmethod
-    @abstractmethod
-    def get_download_url(cls,
-                         identifier_str: str,
-                         mirror_link: str,
-                         **kwargs) -> Optional[str]:
-        """
-        Get file download link
-
-        :param identifier_str: str.
-            The identifier of the target file
-        :param mirror_link: str.
-            The URL of the mirror used to fetch the file
-        :param kwargs:
-            Additional parameter used for network requests
-        :return: str, or None.
-            The direct download link to the file.
-            If unable to get the download link, returns None
-        """
-        pass
-
+    # abstract classmethods
     @classmethod
     @abstractmethod
     def get_identifier(cls, raw_query_str: str) -> Optional[str]:
@@ -86,27 +63,54 @@ class _BaseRepoHandler(ABC):
         :return: str
             The identifier
         """
-        pass
-
-    @classmethod
-    def is_query_valid(cls, raw_query_str: str) -> bool:
-        """
-        Check if the raw query string is recognized
-
-        :param raw_query_str: str.
-            The raw query string user inputted
-        :return: bool
-            Whether the string is in a recognized format
-        """
-        return cls.get_identifier(raw_query_str) is not None
+        raise NotImplementedError
 
     @classmethod
     @abstractmethod
-    def get_mirror_list(cls) -> tuple[str]:
+    def is_meta_query_response_valid(cls, response_obj: rq_Response) -> bool:
         """
-        Get a list of possible mirror URL for file download
+        Check if response for metadata is valid
 
-        :return: tuple[str]
-            A tuple of mirror URL
+        :param response_obj: requests.Response
+            The response to check
+        :return: bool.
+            Whether the response if valid
         """
-        pass
+        raise NotImplementedError
+
+    # abstract methods
+    @abstractmethod
+    def get_metadata(self) -> Union[bool, dict, None]:
+        """
+        Get metadata from identifier
+
+        If able to fetch both author and title from metadata,
+        returns a dict with key 'author' and 'title'.
+        'author' is a tuple of dict[str] with key 'given' and 'family'.
+
+        If able to fetch metadata but unable to parse for author and title,
+        returns None.
+
+        Otherwise (if unable to get metadata), return False
+
+        :return: bool (False), None or dict.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_download_url(self,
+                         mirror_link: str,
+                         **kwargs) -> Optional[str]:
+        """
+        Get file download link
+
+        Returns the direct download link to the file.
+        If unable to get the download link, returns None
+
+        :param mirror_link: str.
+            The URL of the mirror used to fetch the file
+        :param kwargs:
+            Additional parameter used for network requests
+        :return: str, or None.
+        """
+        raise NotImplementedError
