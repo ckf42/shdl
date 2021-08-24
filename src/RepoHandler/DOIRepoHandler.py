@@ -53,16 +53,27 @@ class DOIRepoHandler(_BaseRepoHandler):
         if not self._is_meta_query_response_valid(meta_query_res):
             verbose_print(f"Response is not a valid {self.repo_name} response")
             return False
-        meta_json = meta_query_res.json()
-        return {
-            'author': tuple({k: aDict[k] for k in ('given', 'family')}
-                            for aDict in meta_json['author']),
-            'title':  ''.join((f' {ud_name(c).title()}'
-                               if not c.isascii() and ud_category(c) == 'Sm'
-                               else c)
-                              for c in re_sub('</?.+?>', '',
-                                              unescape(meta_json['title'])))
-        }
+        meta_json_dict = meta_query_res.json()
+        if all(k in meta_json_dict for k in ('author', 'title')) \
+                and all(all(k in aDict for k in ('given', 'family'))
+                        for aDict in meta_json_dict['author']):
+            doc_title \
+                = ''.join((f' {ud_name(c).title()}'
+                           if not c.isascii() and ud_category(c) == 'Sm'
+                           else c)
+                          for c in re_sub('</?.+?>',
+                                          '',
+                                          unescape(meta_json_dict['title'])))
+            return {
+                'author': tuple({k: aDict[k] for k in ('given', 'family')}
+                                for aDict in meta_json_dict['author']),
+                'title':  doc_title
+            }
+        else:
+            info_print(PColor.ERROR("Error:"), end=" ")
+            info_print("Response does not have enough metadata. "
+                       "Please report this DOI as a bug")
+            return None
 
     def get_download_url(self, mirror_link):
         # test mirror
