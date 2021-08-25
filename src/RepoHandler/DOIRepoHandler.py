@@ -78,10 +78,16 @@ class DOIRepoHandler(_BaseRepoHandler):
                           for c in re_sub('</?.+?>',
                                           '',
                                           unescape(meta_json_dict['title'])))
+            publish_year = str(''
+                               if (pDict := meta_json_dict
+                                   .get('published-print', None)) is None
+                               else pDict.get('date-parts', [['']])[0][0])
             return {
-                'author': tuple({k: aDict[k] for k in ('given', 'family')}
+                'author': tuple({k: aDict[k].strip()
+                                 for k in ('given', 'family')}
                                 for aDict in meta_json_dict['author']),
-                'title':  doc_title
+                'title':  doc_title,
+                'year':   publish_year
             }
         # DOI does not return enough metadata
         info_print(PColor.WARNING("WARNING:"), end=" ")
@@ -167,18 +173,22 @@ class DOIRepoHandler(_BaseRepoHandler):
                 == 'application/x-research-info-systems':
             auth_list = list()
             doc_title = None
+            publish_year = ''
             for line in jstor_resp.text.splitlines():
                 if line.startswith('AU  -'):  # author line
                     auth_list.append(line[6:])
                 elif line.startswith('TI  -'):  # title line
                     doc_title = line[6:]
+                elif line.startswith('PY  - '):  # publish year
+                    publish_year = line[6:]
             if len(auth_list) != 0 and doc_title is not None:
                 # able to get the needed information
                 return {
                     'author': tuple(dict(zip(('given', 'family'),
-                                             aItem.rsplit(', ', 1)))
+                                             aItem.strip().rsplit(', ', 1)))
                                     for aItem in auth_list),
-                    'title':  doc_title
+                    'title':  doc_title,
+                    'year':   publish_year,
                 }
             else:
                 # even citation record is incomplete
@@ -226,11 +236,15 @@ class DOIRepoHandler(_BaseRepoHandler):
                 xml_resp.text))
         return {
             'author': tuple(dict(zip(('given', 'family'),
-                                     aItem.text.rsplit(' ', 1)))
+                                     aItem.text.strip().rsplit(' ', 1)))
                             for aItem
                             in xml_root
                             .findall('record/authors/author/name')),
-            'title':  xml_root.find('record/title').text.strip()
+            'title':  xml_root.find('record/title').text.strip(),
+            'year':   (''
+                       if (pDate := xml_root
+                           .find('record/publicationDate')) is None
+                       else pDate.text.strip()[:4])
         }
 
     def alt_extract_metadata(self) -> Union[bool, dict, None]:

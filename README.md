@@ -74,6 +74,29 @@ Will always use HTTPS if not specified
 
 `shdl 10.1109/5.771073 --autoname` → `[N. Paskin, doi 10.1109@5.771073]Toward Unique Identifiers.pdf`
 
+Control autoname format with `--autoformat`
+
+`shdl 10.1109/5.771073 --autoname --autoformat "title is {title}"` → `title Toward Unique Identifiers`
+
+Uses the [Python string formatting syntax](https://docs.python.org/3/library/string.html#formatstrings) with keyword
+arguments. Available keywords are:
+
+* `authors`: a string of comma separated names with given names abbreviated (e.g. `N. Paskin`)
+* `authorEtAl`: same as `authors`, but with only the first 3 names. Remaining names will be replaced with `et al.`
+* `authorFamily`: same as `authors`, but with family names only (e.g. `Paskin`)
+* `identifier`: the document identifier, with `/` replaced by `@` (e.g. `10.1109@5.771073`)
+* `repo`: the name of file repository, in lower case (e.g. `doi`)
+* `title`: the title of the document, in title casing (e.g. `Toward Unique Identifiers`)
+* `year`: the 4-digit string of the recorded publication year
+* `year2`: the last 2 digits of `year`
+
+The algorithms used for checking author names and converting title into title casing are rather simple and may not give
+the desired results.
+
+The key `year` (and `year2`) may not be available in metadata. In this case, they will be replaced by an empty string.
+
+Note that the file extension is always untouched.
+
 ### arXiv support
 
 `shdl arxiv:1501.00001`
@@ -92,7 +115,6 @@ Will always use HTTPS if not specified
 
 * Support for PMID
 * Direct search with e.g. Google Scholar?
-* Allow custom format for `--autoname`
 
 ### Usability
 

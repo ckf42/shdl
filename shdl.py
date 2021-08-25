@@ -39,28 +39,37 @@ if proposedName is None and cliArg.autoname:
         info_print(PColor.WARNING("WARNING:"), end=" ")
         info_print("Unable to fetch metadata "
                    f"for identifier {repo_obj.identifier}")
-        info_print("Autoname falls back to remote name")
+        info_print("Name falls back to remote name")
         cliArg.autoname = False  # not really necessary
     else:
         assert isinstance(repo_obj.metadata, dict)
         assert 'title' in repo_obj.metadata
         assert 'author' in repo_obj.metadata
-        proposedTitle = transform_to_title(
-            convert_math_symbol_to_name(repo_obj.metadata['title']))
-        proposedAuthStr = transform_to_author_str(
-            repo_obj.metadata['author'])
-        proposedName = sanitize_filename(
-            "["
-            + proposedAuthStr
-            + ", "
-            + repo_obj.repo_name.lower()
-            + " "
-            + repo_obj.identifier.replace('/', '@')
-            + "]"
-            + proposedTitle
-        )
-        # check validity later when dl link is fetched as ext is yet not known
-        verbose_print("Proposed name: " + PColor.PATH(proposedName), 2)
+        author_tuple = repo_obj.metadata['author']
+        title_kw_dict = {
+            'repo':         repo_obj.repo_name.lower(),
+            'authors':      transform_to_author_str(author_tuple),
+            'authorEtAl':   transform_to_author_str(author_tuple[:3])
+                            + (', et al.' if len(author_tuple) > 3 else ''),
+            'authorFamily': ', '.join(aDict['family']
+                                      for aDict in author_tuple),
+            'title':        transform_to_title(convert_math_symbol_to_name(
+                repo_obj.metadata['title'])),
+            'identifier':   repo_obj.identifier.replace('/', '@'),
+            'year':         repo_obj.metadata['year'],
+            'year2':        repo_obj.metadata['year'][-2:],
+        }
+        try:
+            proposedName = sanitize_filename(
+                cliArg.autoformat.format_map(title_kw_dict))
+        except ValueError:
+            info_print(PColor.ERROR("ERROR:"), end=" ")
+            info_print("Autoformat invalid. "
+                       "Name falls back to remote name")
+        else:
+            # check validity later when dl link is fetched
+            # as ext is yet not known
+            verbose_print("Proposed name: " + PColor.PATH(proposedName), 2)
 
 # get download link
 dlURL = next((lnk

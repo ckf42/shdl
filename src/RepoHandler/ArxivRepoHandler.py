@@ -50,12 +50,13 @@ class ArxivRepoHandler(_BaseRepoHandler):
             .find(f'{atom_str}entry')
         return {
             'author': tuple(dict(zip(('given', 'family'),
-                                     ele.text.rsplit(' ', 1)))
+                                     ele.text.strip().rsplit(' ', 1)))
                             for ele
                             in entry_root
                             .findall(f'{atom_str}author/{atom_str}name')),
             'title':  ' '.join(entry_root.find(f'{atom_str}title')
-                               .text.split(None))
+                               .text.split(None)),
+            'year':   entry_root.find(f'{atom_str}updated').text[:4],
         }
 
     def get_download_url(self, mirror_link):

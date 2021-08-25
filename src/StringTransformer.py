@@ -51,7 +51,7 @@ def transform_to_author_str(author_dict_tuple: Tuple[Dict[str, str]]) -> str:
             in split(r'\b', author_name_dict['given'])
         )
         + ' '
-        + author_name_dict['family'].strip()
+        + author_name_dict['family']
         for author_name_dict in author_dict_tuple)
 
 
