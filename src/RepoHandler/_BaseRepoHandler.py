@@ -12,6 +12,7 @@ class _BaseRepoHandler(ABC):
     identifier = None
     is_query_valid = None
     metadata = None
+    metadata_response = None
     is_meta_response_valid = None
 
     # init
@@ -20,7 +21,8 @@ class _BaseRepoHandler(ABC):
         self.is_query_valid = (self.identifier is not None)
         if not self.is_query_valid:
             return
-        self.metadata = self.get_metadata()
+        self.metadata_response = self.get_metadata_response()
+        self.metadata = self.extract_metadata()
         self.is_meta_response_valid = self.metadata is not False
 
     # abstract properties
@@ -50,7 +52,7 @@ class _BaseRepoHandler(ABC):
         """
         raise NotImplementedError
 
-    # abstract classmethods
+    # abstract class methods
     @classmethod
     @abstractmethod
     def get_identifier(cls, raw_query_str: str) -> Optional[str]:
@@ -80,9 +82,16 @@ class _BaseRepoHandler(ABC):
 
     # abstract methods
     @abstractmethod
-    def get_metadata(self) -> Union[bool, dict, None]:
+    def get_metadata_response(self) -> rq_Response:
         """
-        Get metadata from identifier
+        Get the metadata response and set it to self.metadata_response
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def extract_metadata(self) -> Union[bool, dict, None]:
+        """
+        Get metadata from fetched self.metadata_response
 
         If able to fetch both author and title from metadata,
         returns a dict with key 'author' and 'title'.

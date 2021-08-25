@@ -33,18 +33,20 @@ class ArxivRepoHandler(_BaseRepoHandler):
         return response_obj.status_code == 200 \
                and 'http://arxiv.org/api/errors' not in response_obj.text
 
-    def get_metadata(self):
+    def get_metadata_response(self):
         verbose_print(f"Fetching metadata for type {self.repo_name}...")
-        meta_query_res = rq.get(
+        return rq.get(
             'http://export.arxiv.org/api/query?id_list={id}'.format(
                 id=self.identifier
             )
         )
-        if not self._is_meta_query_response_valid(meta_query_res):
+
+    def extract_metadata(self):
+        if not self._is_meta_query_response_valid(self.metadata_response):
             verbose_print(f"Response is not a valid {self.repo_name} response")
             return False
         atom_str = '{http://www.w3.org/2005/Atom}'
-        entry_root = eTree.fromstring(meta_query_res.text) \
+        entry_root = eTree.fromstring(self.metadata_response.text) \
             .find(f'{atom_str}entry')
         return {
             'author': tuple(dict(zip(('given', 'family'),

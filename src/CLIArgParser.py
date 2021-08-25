@@ -94,10 +94,10 @@ cliArgParser.add_argument("--verbose", "-v",
 cliArg = cliArgParser.parse_args()
 
 # cliArg handling
-from src.CommonUtil import *
-from urllib.parse import urlparse, urlunparse
-import requests as rq
 from html import unescape
+import requests as rq
+from urllib.parse import urlparse, urlunparse
+from src.CommonUtil import *
 
 cliArg.doi = unescape(cliArg.doi)
 
@@ -135,6 +135,7 @@ cliArg.proxy = {scheme: cliArg.proxy for scheme in ('http', 'https')} \
 if cliArg.proxy is None:
     info_print(PColor.WARNING("WARNING:"), end=" ")
     info_print("No proxy configured")
+
 verbose_print("Testing network connectivity ...")
 try:
     pass

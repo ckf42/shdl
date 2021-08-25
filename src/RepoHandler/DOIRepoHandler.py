@@ -8,6 +8,7 @@ from re import IGNORECASE
 from html import unescape
 from unicodedata import category as ud_category
 from unicodedata import name as ud_name
+from typing import Union
 
 from src.RepoHandler._BaseRepoHandler import _BaseRepoHandler
 from src.CLIArgParser import *
@@ -24,7 +25,7 @@ class DOIRepoHandler(_BaseRepoHandler):
     mirror_list = cliArg.mirror
 
     # TODO change into a class property?
-    link_extracter = re_compile(
+    link_extractor = re_compile(
         "\"location\\.href=.?'(.+?)\\?.*?download=true")
 
     @classmethod
@@ -44,16 +45,18 @@ class DOIRepoHandler(_BaseRepoHandler):
                and response_obj.headers['content-type'] \
                == 'application/vnd.citationstyles.csl+json'
 
-    def get_metadata(self):
+    def get_metadata_response(self):
         verbose_print(f"Fetching metadata for type {self.repo_name}...")
-        meta_query_res = rq.get(
+        return rq.get(
             'https://doi.org/{id}'.format(id=self.identifier),
             headers={"Accept": "application/vnd.citationstyles.csl+json"}
         )
-        if not self._is_meta_query_response_valid(meta_query_res):
+
+    def extract_metadata(self):
+        if not self._is_meta_query_response_valid(self.metadata_response):
             verbose_print(f"Response is not a valid {self.repo_name} response")
             return False
-        meta_json_dict = meta_query_res.json()
+        meta_json_dict = self.metadata_response.json()
         if all(k in meta_json_dict for k in ('author', 'title')) \
                 and all(all(k in aDict for k in ('given', 'family'))
                         for aDict in meta_json_dict['author']):
@@ -69,11 +72,16 @@ class DOIRepoHandler(_BaseRepoHandler):
                                 for aDict in meta_json_dict['author']),
                 'title':  doc_title
             }
-        else:
+        # DOI does not return enough metadata
+        info_print(PColor.WARNING("WARNING:"), end=" ")
+        info_print("DOI query does not return enough metadata. "
+                   "Trying alternative methods ...")
+        alt_metadata = self.alt_extract_metadata()
+        if alt_metadata is None:
             info_print(PColor.ERROR("Error:"), end=" ")
             info_print("Response does not have enough metadata. "
                        "Please report this DOI as a bug")
-            return None
+        return alt_metadata
 
     def get_download_url(self, mirror_link):
         # test mirror
@@ -110,14 +118,14 @@ class DOIRepoHandler(_BaseRepoHandler):
         for line in preview_resp.text.splitlines():
             line = unescape(line)
             if (match_obj \
-                    := self.link_extracter.search(line,
+                    := self.link_extractor.search(line,
                                                   IGNORECASE)) is not None:
                 verbose_print(f"Line with possible link: {line}", 2)
-                dlURL = urlunparse(
+                dl_url = urlunparse(
                     urlparse(match_obj.group(1).rsplit('#', 1)[0],
                              scheme='https'))
-                verbose_print("Link found: " + PColor.PATH(dlURL))
-                possible_link.append(dlURL)
+                verbose_print("Link found: " + PColor.PATH(dl_url))
+                possible_link.append(dl_url)
         if len(possible_link) == 0:
             info_print(PColor.ERROR("ERROR:"), end=" ")
             info_print("No download link found. "
@@ -131,3 +139,50 @@ class DOIRepoHandler(_BaseRepoHandler):
             info_print("Using only the first link")
             possible_link = possible_link[:1]
         return possible_link[0]
+
+    def alt_extract_metadata(self) -> Union[bool, dict, None]:
+        """
+        Alternative method to get metadata. Will also set self.metadata
+
+        :return: bool (False), None or dict.
+            Same as self.extract_metadata
+        """
+        # get doc host
+        self_host = urlparse(rq.get('https://doi.org/{id}'
+                                    .format(id=self.identifier)).url).netloc
+        if self_host == 'www.jstor.org':
+            jstor_resp = rq.get(
+                'https://www.jstor.org/citation/ris/{id}'.format(
+                    id=self.identifier),
+                **cliArg.rqKwargs
+            )
+            if jstor_resp.status_code == 200 \
+                    and jstor_resp.headers['Content-Type'] \
+                    == 'application/x-research-info-systems':
+                auth_list = list()
+                doc_title = None
+                for line in jstor_resp.text.splitlines():
+                    if line.startswith('AU  -'):  # author line
+                        auth_list.append(line[6:])
+                    elif line.startswith('TI  -'):  # title line
+                        doc_title = line[6:]
+                if len(auth_list) != 0 and doc_title is not None:
+                    # able to get the needed information
+                    return {
+                        'author': tuple(dict(zip(('given', 'family'),
+                                                 aItem.rsplit(', ', 1)))
+                                        for aItem in auth_list),
+                        'title':  doc_title
+                    }
+                else:
+                    # even citation record is incomplete
+                    return None
+            else:
+                info_print(PColor.ERROR("ERROR:"), end=" ")
+                info_print("Unable to fetch metadata from JSTOR. "
+                           "Maybe JSTOR blocked the requests?")
+                return False
+        else:
+            info_print(PColor.ERROR("ERROR:"), end=" ")
+            info_print(f"{self_host} is not a recognized host")
+            return False
