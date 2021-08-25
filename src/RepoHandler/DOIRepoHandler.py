@@ -1,13 +1,16 @@
+import re
+
 import requests as rq
 
 from urllib.parse import urljoin, urlparse, urlunparse
 from re import match as re_match
 from re import sub as re_sub
 from re import compile as re_compile
-from re import IGNORECASE
-from html import unescape
+from re import IGNORECASE, MULTILINE
+from html import unescape, escape
 from unicodedata import category as ud_category
 from unicodedata import name as ud_name
+from xml.etree import ElementTree as eTree
 from typing import Union
 
 from src.RepoHandler._BaseRepoHandler import _BaseRepoHandler
@@ -26,7 +29,17 @@ class DOIRepoHandler(_BaseRepoHandler):
 
     # TODO change into a class property?
     link_extractor = re_compile(
-        "\"location\\.href=.?'(.+?)\\?.*?download=true")
+        "\"location\\.href=.?'(.+?)\\?.*?download=true",
+        flags=IGNORECASE
+    )
+    aims_extractor = re.compile(
+        '^\\s*<meta name="citation_pdf_url" '
+        'content="https://www\\.aimsciences\\.org/article/'
+        'exportPdf\\?id=(.+?)"/>\\s*$',
+        flags=IGNORECASE
+    )
+    aims_xml_sanitizer = re.compile('\\s*<(.+?)>(.+?)</\\1>\\s*',
+                                    flags=IGNORECASE | MULTILINE)
 
     @classmethod
     def get_identifier(cls, raw_query_str):
@@ -150,12 +163,12 @@ class DOIRepoHandler(_BaseRepoHandler):
         # get doc host
         self_host = urlparse(rq.get('https://doi.org/{id}'
                                     .format(id=self.identifier)).url).netloc
+        verbose_print(f"Document host: {self_host}")
         if self_host == 'www.jstor.org':
-            jstor_resp = rq.get(
-                'https://www.jstor.org/citation/ris/{id}'.format(
-                    id=self.identifier),
-                **cliArg.rqKwargs
-            )
+            query_url = 'https://www.jstor.org/citation/ris/{id}'.format(
+                id=self.identifier)
+            verbose_print(f"Fetching from {PColor.PATH(query_url)}")
+            jstor_resp = rq.get(query_url, **cliArg.rqKwargs)
             if jstor_resp.status_code == 200 \
                     and jstor_resp.headers['Content-Type'] \
                     == 'application/x-research-info-systems':
@@ -182,6 +195,43 @@ class DOIRepoHandler(_BaseRepoHandler):
                 info_print("Unable to fetch metadata from JSTOR. "
                            "Maybe JSTOR blocked the requests?")
                 return False
+        elif self_host == 'www.aimsciences.org':
+            query_url = 'https://www.aimsciences.org/article/doi/{id}'.format(
+                id=self.identifier)
+            verbose_print(f"Fetching from {PColor.PATH(query_url)}")
+            aims_resp = rq.get(query_url, headers=cliArg.rqKwargs['headers'])
+            # TODO check valid
+            aims_internal_id = None
+            for line in aims_resp.text.splitlines():
+                if (match_obj := self.aims_extractor.search(line)) is not None:
+                    aims_internal_id = match_obj.group(1)
+                    break
+            if aims_internal_id is None:
+                info_print(PColor.ERROR("ERROR:"), end=" ")
+                info_print("Failed to parse AIMS response")
+                return False
+            verbose_print(f"AIMS ID: {aims_internal_id}")
+            xml_resp = rq.get(
+                'https://www.aimsciences.org/article/'
+                'exportXML?ids={id}&downType=XML'.format(
+                    id=aims_internal_id),
+                **cliArg.rqKwargs
+            )
+            # TODO check valid
+            xml_root = eTree.fromstring(
+                self.aims_xml_sanitizer.sub(
+                    lambda x: (f'<{x.group(1)}>'
+                               f'{escape(x.group(2))}'
+                               f'</{x.group(1)}>'),
+                    xml_resp.text))
+            return {
+                'author': tuple(dict(zip(('given', 'family'),
+                                         aItem.text.rsplit(' ', 1)))
+                                for aItem
+                                in xml_root
+                                .findall('record/authors/author/name')),
+                'title':  xml_root.find('record/title').text.strip()
+            }
         else:
             info_print(PColor.ERROR("ERROR:"), end=" ")
             info_print(f"{self_host} is not a recognized host")
