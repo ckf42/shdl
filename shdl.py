@@ -14,7 +14,7 @@ verbose_print(cliArg, msg_verbose_level=2)
 # check repo
 repo_obj = next((obj
                  for cls in registered_repo_list
-                 if (obj := cls(cliArg.doi)).is_query_valid),
+                 if (obj := cls(cliArg.identifier)).is_query_valid),
                 None)
 if repo_obj is None:
     # error_reporter.quit_now(ErrorType.QUERY_INVALID,
@@ -22,7 +22,7 @@ if repo_obj is None:
     info_print(PColor.WARNING("WARNING:"), end=" ")
     info_print("Input query format not recognized. "
                "Assuming it is sanitized DOI")
-    repo_obj = DOIRepoHandler('doi: ' + cliArg.doi)
+    repo_obj = DOIRepoHandler('doi: ' + cliArg.identifier)
 verbose_print(f"Detected identifier type: {repo_obj.repo_name}")
 verbose_print(f"Sanitized identifier: {repo_obj.identifier}")
 

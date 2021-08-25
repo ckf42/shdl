@@ -17,7 +17,7 @@ cliArgParser = ArgumentParser(
 cliArgParser.add_argument("--version", "-V",
                           action='version',
                           version="% (prog)s v0.5.0")
-cliArgParser.add_argument("doi",
+cliArgParser.add_argument("identifier",
                           type=str,
                           help="The DOI string of the document. "
                                "If the string contains spaces, "
@@ -86,7 +86,7 @@ cliArgParser.add_argument('--autoformat',
                                "In Python str.format syntax. "
                                "Available keywords: "
                                "authors, authorEtAl, authorFamily, "
-                               "identifier, repo, title, year. "
+                               "identifier, repo, title, year, year2. "
                                "Default: "
                                "[{authors}, {repo} {identifier}]{title}")
 cliArgParser.add_argument("--nocolor",
@@ -116,7 +116,7 @@ import requests as rq
 from urllib.parse import urlparse, urlunparse
 from src.CommonUtil import *
 
-cliArg.doi = unescape(cliArg.doi)
+cliArg.identifier = unescape(cliArg.identifier)
 
 # check if dir is valid
 if cliArg.dir is None:

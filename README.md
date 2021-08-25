@@ -26,6 +26,8 @@ Standalone executable is not yet available.
 
 ### Document fetching
 
+By default, identifier is assumed to be DOI
+
 Unless `--dir` is specified, file is saved to the current working directory
 
 `shdl 10.1109/5.771073`
