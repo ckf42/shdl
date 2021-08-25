@@ -88,8 +88,6 @@ Will always use HTTPS if not specified
 
 ## TODO
 
-### Branch TODO
-
 ### Features
 
 * Support for PMID
