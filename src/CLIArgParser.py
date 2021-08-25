@@ -19,9 +19,11 @@ cliArgParser.add_argument("--version", "-V",
                           version="% (prog)s v0.5.0")
 cliArgParser.add_argument("identifier",
                           type=str,
-                          help="The DOI string of the document. "
+                          help="The identifier of the document. "
                                "If the string contains spaces, "
-                               "it must be quoted")
+                               "it must be quoted. "
+                               "Strings that are not recognized "
+                               "will be taken as stripped DOI")
 cliArgParser.add_argument("--proxy", "-p",
                           type=str,
                           help="Requests-type proxy argument. "
@@ -84,11 +86,12 @@ cliArgParser.add_argument('--autoformat',
                           default="[{authors}, {repo} {identifier}]{title}",
                           help="The format used for --autoname. "
                                "In Python str.format syntax. "
+                               "Format containing space must be quoted. "
                                "Available keywords: "
                                "authors, authorEtAl, authorFamily, "
-                               "identifier, repo, title, year, year2. "
+                               "identifier, repo, title, year. "
                                "Default: "
-                               "[{authors}, {repo} {identifier}]{title}")
+                               "\"[{authors}, {repo} {identifier}]{title}\"")
 cliArgParser.add_argument("--nocolor",
                           action='store_true',
                           help="Suppress color display")
