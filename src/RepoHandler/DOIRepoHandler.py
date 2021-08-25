@@ -1,5 +1,3 @@
-import re
-
 import requests as rq
 
 from urllib.parse import urljoin, urlparse, urlunparse
@@ -24,7 +22,7 @@ if __name__ == '__main__':
 class DOIRepoHandler(_BaseRepoHandler):
     repo_name = "DOI"
     query_extract_pattern \
-        = r'^(https?://)?(dx\.|www\.)?doi(\.org/|:|\/)\s*(.+)$'
+        = r'^(https?://)?(dx\.|www\.)?doi(\.org/|:|/)\s*(.+)$'
     mirror_list = cliArg.mirror
 
     # TODO change into a class property?
@@ -32,13 +30,13 @@ class DOIRepoHandler(_BaseRepoHandler):
         "\"location\\.href=.?'(.+?)\\?.*?download=true",
         flags=IGNORECASE
     )
-    aims_extractor = re.compile(
+    aims_extractor = re_compile(
         '^\\s*<meta name="citation_pdf_url" '
         'content="https://www\\.aimsciences\\.org/article/'
         'exportPdf\\?id=(.+?)"/>\\s*$',
         flags=IGNORECASE
     )
-    aims_xml_sanitizer = re.compile('\\s*<(.+?)>(.+?)</\\1>\\s*',
+    aims_xml_sanitizer = re_compile('\\s*<(.+?)>(.+?)</\\1>\\s*',
                                     flags=IGNORECASE | MULTILINE)
 
     @classmethod
@@ -153,9 +151,91 @@ class DOIRepoHandler(_BaseRepoHandler):
             possible_link = possible_link[:1]
         return possible_link[0]
 
+    def alt_extract_metadata_jstor(self) -> Union[bool, dict, None]:
+        """
+        Alternative method to get metadata from JSTOR.
+
+        :return: bool (False), None or dict.
+            Same as self.extract_metadata
+        """
+        query_url = 'https://www.jstor.org/citation/ris/{id}'.format(
+            id=self.identifier)
+        verbose_print(f"Fetching from {PColor.PATH(query_url)}")
+        jstor_resp = rq.get(query_url, **cliArg.rqKwargs)
+        if jstor_resp.status_code == 200 \
+                and jstor_resp.headers['Content-Type'] \
+                == 'application/x-research-info-systems':
+            auth_list = list()
+            doc_title = None
+            for line in jstor_resp.text.splitlines():
+                if line.startswith('AU  -'):  # author line
+                    auth_list.append(line[6:])
+                elif line.startswith('TI  -'):  # title line
+                    doc_title = line[6:]
+            if len(auth_list) != 0 and doc_title is not None:
+                # able to get the needed information
+                return {
+                    'author': tuple(dict(zip(('given', 'family'),
+                                             aItem.rsplit(', ', 1)))
+                                    for aItem in auth_list),
+                    'title':  doc_title
+                }
+            else:
+                # even citation record is incomplete
+                return None
+        else:
+            info_print(PColor.ERROR("ERROR:"), end=" ")
+            info_print("Unable to fetch metadata from JSTOR. "
+                       "Maybe JSTOR blocked the requests?")
+            return False
+
+    def alt_extract_metadata_aims(self) -> Union[bool, dict, None]:
+        """
+        Alternative method to get metadata from AIMS.
+
+        :return: bool (False), None or dict.
+            Same as self.extract_metadata
+        """
+        query_url = 'https://www.aimsciences.org/article/doi/{id}'.format(
+            id=self.identifier)
+        verbose_print(f"Fetching from {PColor.PATH(query_url)}")
+        aims_resp = rq.get(query_url, headers=cliArg.rqKwargs['headers'])
+        # TODO check valid
+        aims_internal_id = None
+        for line in aims_resp.text.splitlines():
+            if (match_obj := self.aims_extractor.search(line)) is not None:
+                aims_internal_id = match_obj.group(1)
+                break
+        if aims_internal_id is None:
+            info_print(PColor.ERROR("ERROR:"), end=" ")
+            info_print("Failed to parse AIMS response")
+            return False
+        verbose_print(f"AIMS ID: {aims_internal_id}")
+        xml_resp = rq.get(
+            'https://www.aimsciences.org/article/'
+            'exportXML?ids={id}&downType=XML'.format(
+                id=aims_internal_id),
+            **cliArg.rqKwargs
+        )
+        # TODO check valid
+        xml_root = eTree.fromstring(
+            self.aims_xml_sanitizer.sub(
+                lambda x: (f'<{x.group(1)}>'
+                           f'{escape(x.group(2))}'
+                           f'</{x.group(1)}>'),
+                xml_resp.text))
+        return {
+            'author': tuple(dict(zip(('given', 'family'),
+                                     aItem.text.rsplit(' ', 1)))
+                            for aItem
+                            in xml_root
+                            .findall('record/authors/author/name')),
+            'title':  xml_root.find('record/title').text.strip()
+        }
+
     def alt_extract_metadata(self) -> Union[bool, dict, None]:
         """
-        Alternative method to get metadata. Will also set self.metadata
+        Alternative method to get metadata.
 
         :return: bool (False), None or dict.
             Same as self.extract_metadata
@@ -164,76 +244,14 @@ class DOIRepoHandler(_BaseRepoHandler):
         self_host = urlparse(rq.get('https://doi.org/{id}'
                                     .format(id=self.identifier)).url).netloc
         verbose_print(f"Document host: {self_host}")
-        if self_host == 'www.jstor.org':
-            query_url = 'https://www.jstor.org/citation/ris/{id}'.format(
-                id=self.identifier)
-            verbose_print(f"Fetching from {PColor.PATH(query_url)}")
-            jstor_resp = rq.get(query_url, **cliArg.rqKwargs)
-            if jstor_resp.status_code == 200 \
-                    and jstor_resp.headers['Content-Type'] \
-                    == 'application/x-research-info-systems':
-                auth_list = list()
-                doc_title = None
-                for line in jstor_resp.text.splitlines():
-                    if line.startswith('AU  -'):  # author line
-                        auth_list.append(line[6:])
-                    elif line.startswith('TI  -'):  # title line
-                        doc_title = line[6:]
-                if len(auth_list) != 0 and doc_title is not None:
-                    # able to get the needed information
-                    return {
-                        'author': tuple(dict(zip(('given', 'family'),
-                                                 aItem.rsplit(', ', 1)))
-                                        for aItem in auth_list),
-                        'title':  doc_title
-                    }
-                else:
-                    # even citation record is incomplete
-                    return None
-            else:
-                info_print(PColor.ERROR("ERROR:"), end=" ")
-                info_print("Unable to fetch metadata from JSTOR. "
-                           "Maybe JSTOR blocked the requests?")
-                return False
-        elif self_host == 'www.aimsciences.org':
-            query_url = 'https://www.aimsciences.org/article/doi/{id}'.format(
-                id=self.identifier)
-            verbose_print(f"Fetching from {PColor.PATH(query_url)}")
-            aims_resp = rq.get(query_url, headers=cliArg.rqKwargs['headers'])
-            # TODO check valid
-            aims_internal_id = None
-            for line in aims_resp.text.splitlines():
-                if (match_obj := self.aims_extractor.search(line)) is not None:
-                    aims_internal_id = match_obj.group(1)
-                    break
-            if aims_internal_id is None:
-                info_print(PColor.ERROR("ERROR:"), end=" ")
-                info_print("Failed to parse AIMS response")
-                return False
-            verbose_print(f"AIMS ID: {aims_internal_id}")
-            xml_resp = rq.get(
-                'https://www.aimsciences.org/article/'
-                'exportXML?ids={id}&downType=XML'.format(
-                    id=aims_internal_id),
-                **cliArg.rqKwargs
-            )
-            # TODO check valid
-            xml_root = eTree.fromstring(
-                self.aims_xml_sanitizer.sub(
-                    lambda x: (f'<{x.group(1)}>'
-                               f'{escape(x.group(2))}'
-                               f'</{x.group(1)}>'),
-                    xml_resp.text))
-            return {
-                'author': tuple(dict(zip(('given', 'family'),
-                                         aItem.text.rsplit(' ', 1)))
-                                for aItem
-                                in xml_root
-                                .findall('record/authors/author/name')),
-                'title':  xml_root.find('record/title').text.strip()
-            }
-        else:
+        metadata_getter_func = {
+            'www.jstor.org':       self.alt_extract_metadata_jstor,
+            'www.aimsciences.org': self.alt_extract_metadata_aims
+        }.get(self_host, None)
+        if metadata_getter_func is None:
             info_print(PColor.ERROR("ERROR:"), end=" ")
             info_print(f"{self_host} is not a recognized host. "
                        "Please report this on main page")
             return False
+        else:
+            return metadata_getter_func()
