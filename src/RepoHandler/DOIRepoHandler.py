@@ -234,5 +234,6 @@ class DOIRepoHandler(_BaseRepoHandler):
             }
         else:
             info_print(PColor.ERROR("ERROR:"), end=" ")
-            info_print(f"{self_host} is not a recognized host")
+            info_print(f"{self_host} is not a recognized host. "
+                       "Please report this on main page")
             return False

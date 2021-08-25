@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from requests import Response as rq_Response
 
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 if __name__ == '__main__':
     quit()
@@ -43,7 +43,9 @@ class _BaseRepoHandler(ABC):
     @classmethod
     @property
     @abstractmethod
-    def mirror_list(cls) -> tuple[str]:
+    # def mirror_list(cls) -> tuple[str]:
+    def mirror_list(cls) -> Tuple[str]:
+        # 3.8 compatible type hint
         """
         Get a list of possible mirror URL for file download
 

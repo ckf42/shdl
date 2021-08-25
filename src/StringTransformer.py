@@ -2,6 +2,8 @@ from html import unescape
 from re import split, sub
 from unicodedata import category, name, normalize
 
+from typing import Dict, Tuple
+
 if __name__ == '__main__':
     quit()
 
@@ -28,7 +30,9 @@ def sanitize_filename(proposed_filename: str) -> str:
     )
 
 
-def transform_to_author_str(author_dict_tuple: tuple[dict[str, str]]) -> str:
+# def transform_to_author_str(author_dict_tuple: tuple[dict[str, str]]) -> str:
+def transform_to_author_str(author_dict_tuple: Tuple[Dict[str, str]]) -> str:
+    # 3.8 compatible type hint
     """
     Transform a tuple of author information into a single formatted string
 
