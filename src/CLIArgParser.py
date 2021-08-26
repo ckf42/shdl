@@ -111,13 +111,17 @@ cliArgParser.add_argument("--dryrun",
                                "download the file")
 cliArgParser.add_argument("--config",
                           type=str,
+                          default='~/.shdlconfig',
                           help="The path to the config file. "
-                               "If the path is specified, "
+                               "If the file exists and readable, "
                                "the following configs will be overridden "
                                "from file (instead of the CLI argument) "
                                "if they are present: "
                                "proxy, mirror, dir, chunk, useragent, "
-                               "autoname, autoformat")
+                               "autoname, autoformat. "
+                               "Pass an empty string to disable this. "
+                               "Default: "
+                               "~/.shdlconfig")
 cliArgParser.add_argument("--verbose", "-v",
                           action='count',
                           default=0,
@@ -132,12 +136,13 @@ from src.CommonUtil import *
 cliArg['identifier'] = unquote(cliArg['identifier'])
 
 # read config file if present
-if cliArg['config'] is None \
-        and (defPath := Path.home() / '.shdlconfig').is_file():
-    # get default
-    verbose_print("Default config file found")
-    cliArg['config'] = str(defPath)
-if cliArg['config'] is not None:
+# if cliArg['config'] is None \
+#         and (defPath := Path.home() / '.shdlconfig').is_file():
+#     # get default
+#     verbose_print("Default config file found")
+#     cliArg['config'] = str(defPath)
+# if cliArg['config'] is not None:
+if cliArg['config'] != '':
     try:
         configPath = Path(cliArg['config'])
         if not configPath.is_file():
@@ -172,10 +177,16 @@ if cliArg['config'] is not None:
                               f"with key {lineContent}")
         verbose_print(f"Overriding {list(configDict.keys())}", 2)
         cliArg.update(configDict)
-    except (FileNotFoundError, PermissionError):
+    except FileNotFoundError:
+        if cliArg['config'] == '~/.shdlconfig':  # is default
+            verbose_print(f"{PColor.PATH('~/.shdlconfig')} not found")
+        else:
+            info_print("Config file not found "
+                       f"at {PColor.PATH(cliArg['config'])}.")
+    except PermissionError:
         info_print(PColor.ERROR("ERROR:"), end=" ")
         info_print("Cannot read specified config file "
-                   f"{PColor.PATH(str(cliArg['config']))}")
+                   f"{PColor.PATH(cliArg['config'])}")
     except ValueError:
         info_print(PColor.ERROR("ERROR:"), end=" ")
         info_print("Cannot parse config file. "
