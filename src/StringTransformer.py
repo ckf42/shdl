@@ -102,14 +102,15 @@ def transform_to_title(raw_title_str: str) -> str:
     if len(word_list) <= 1:
         return raw_title_str
     else:
-        return (word_list[0]
-                if word_list[0].isupper()
-                else word_list[0].capitalize()) \
-               + ''.join(
-            map(lambda w: w.lower() \
-                if w.lower() in _stopword_list \
-                else (w if w.isupper() else w.capitalize()),
-                word_list[1:]))
+        return ((word_list[0]
+                 if word_list[0].isupper()
+                 else word_list[0].capitalize())
+                + ''.join(map((lambda w:
+                               w.lower()
+                               if w.lower() in _stopword_list
+                               else (w if w.isupper() else w.capitalize())),
+                              word_list[1:]))
+                )
 
 
 def autoname_patcher(metadata_dict: dict,
@@ -124,6 +125,11 @@ def autoname_patcher(metadata_dict: dict,
     :return: str.
         The sanitized formatted filename.
     """
+    assert all(k in metadata_dict
+               for k in ('author', 'title', 'repo', 'id', 'year'))
+    assert all(k in aDict
+               for aDict in metadata_dict['author']
+               for k in ('family', 'given'))
     author_tuple = metadata_dict['author']
     author_str = transform_to_author_str(author_tuple)
     doc_title = convert_math_symbol_to_name(metadata_dict['title'])
@@ -141,11 +147,15 @@ def autoname_patcher(metadata_dict: dict,
                                      for aDict in author_tuple),
         'title':             doc_titlecase,
         'title_':            '_'.join(w.capitalize()
-                                      for w in split('[ ,-]+',
+                                      for w in split('[ ,\\-]+',
                                                      doc_titlecase)),
+        'titleCamel':        ''.join(w.capitalize()
+                                     for w in split('[ ,\\-]+',
+                                                    doc_titlecase)),
         'identifier':        metadata_dict['id'].replace('/', '@'),
         'year':              metadata_dict['year'],
         'year2':             metadata_dict['year'][-2:],
     }
-    verbose_print("Available autoname var: " + str(title_kw_dict), 3)
+    verbose_print("Available autoname variables (not sanitized):", 3)
+    verbose_print(str(title_kw_dict), 3)
     return sanitize_filename(inputted_format_str.format_map(title_kw_dict))

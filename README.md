@@ -82,7 +82,7 @@ Will always use HTTPS if not specified
 
 Control autoname format with `--autoformat "<format string>"`
 
-`shdl arxiv:1110.2832 --autoname --autoformat "title is {title}"` → Output file
+`shdl 10.1088/1751-8113/44/49/492001 --autoname --autoformat "title is {title}"` → Output file
 name `title is Can Apparent Superluminal Neutrino Speeds be Explained as a Quantum Weak Measurement.pdf`
 
 Uses the [Python string formatting syntax](https://docs.python.org/3/library/string.html#formatstrings) with keyword
@@ -101,6 +101,8 @@ arguments. Available keywords are:
   e.g. `Can Apparent Superluminal Neutrino Speeds be Explained as a Quantum Weak Measurement`)
 * `title_`: same as `title`, but words are separated by a single underscore and every word is capitalized (
   e.g. `Can_Apparent_Superluminal_Neutrino_Speeds_Be_Explained_As_A_Quantum_Weak_Measurement`)
+* `titleCamel`: same as `title_`, but without underscores (
+  e.g. `CanApparentSuperluminalNeutrinoSpeedsBeExplainedAsAQuantumWeakMeasurement`)
 * `year`: the 4-digit string of the recorded publication year (e.g. `2011`)
 * `year2`: the last 2 digits of `year` (e.g. `11`)
 
