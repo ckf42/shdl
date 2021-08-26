@@ -70,15 +70,15 @@ Will always use HTTPS if not specified
 
 ### Filename control
 
-`shdl 10.1109/5.771073` → `paskin1999.pdf`
+`shdl 10.1109/5.771073` → Output file name `paskin1999.pdf`
 
-`shdl 10.1109/5.771073 --output topsecret` → `topsecret.pdf`
+`shdl 10.1109/5.771073 --output topsecret` → Output file name `topsecret.pdf`
 
-`shdl 10.1109/5.771073 --autoname` → `[N. Paskin, doi 10.1109@5.771073]Toward Unique Identifiers.pdf`
+`shdl 10.1109/5.771073 --autoname` → Output file name `[N. Paskin, doi 10.1109@5.771073]Toward Unique Identifiers.pdf`
 
-Control autoname format with `--autoformat`
+Control autoname format with `--autoformat "<format string>"`
 
-`shdl 10.1109/5.771073 --autoname --autoformat "title is {title}"` → `title Toward Unique Identifiers`
+`shdl 10.1109/5.771073 --autoname --autoformat "title is {title}"` → Output file name `title is Toward Unique Identifiers.pdf`
 
 Uses the [Python string formatting syntax](https://docs.python.org/3/library/string.html#formatstrings) with keyword
 arguments. Available keywords are:
@@ -94,6 +94,8 @@ arguments. Available keywords are:
 
 The algorithms used for checking author names and converting title into title casing are rather simple and may not give
 the desired results.
+
+Double quotes are not necessary if the format string does not include space. 
 
 The key `year` (and `year2`) may not be available in metadata. In this case, they will be replaced by an empty string.
 
