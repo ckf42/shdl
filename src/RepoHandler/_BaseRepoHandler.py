@@ -99,7 +99,7 @@ class _BaseRepoHandler(ABC):
 
         If able to fetch both author and title from metadata,
         returns a dict with key 'author' and 'title'.
-        'author' is a tuple of dict[str] with key 'given' and 'family'.
+        'author' is a tuple of dict[str, str] with key 'given' and 'family'.
 
         If able to fetch metadata but unable to parse for author and title,
         returns None.

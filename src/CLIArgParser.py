@@ -89,7 +89,9 @@ cliArgParser.add_argument('--autoformat',
                                "Format containing space must be quoted. "
                                "Available keywords: "
                                "authors, authorEtAl, authorFamily, "
-                               "identifier, repo, title, year. "
+                               "authorFamilyCamel, identifier, repo, title, "
+                               "title_, year, year2. "
+                               "For details, refer to the repo README. "
                                "Default: "
                                "\"[{authors}, {repo} {identifier}]{title}\"")
 cliArgParser.add_argument("--nocolor",

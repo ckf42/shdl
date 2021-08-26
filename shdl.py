@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+from re import sub as re_sub
+from re import split as re_split
+
 from src.CLIArgParser import *
 from src.CommonUtil import *
 from src.StringTransformer import *
@@ -45,25 +48,41 @@ if proposedName is None and cliArg.autoname:
         assert isinstance(repo_obj.metadata, dict)
         assert 'title' in repo_obj.metadata
         assert 'author' in repo_obj.metadata
+        info_print(f"Proposed format: {cliArg.autoformat}")
         author_tuple = repo_obj.metadata['author']
+        author_str = transform_to_author_str(author_tuple)
+        doc_title = convert_math_symbol_to_name(repo_obj.metadata['title'])
+        doc_titlecase = transform_to_title(doc_title)
         title_kw_dict = {
-            'repo':         repo_obj.repo_name.lower(),
-            'authors':      transform_to_author_str(author_tuple),
-            'authorEtAl':   transform_to_author_str(author_tuple[:3])
-                            + (', et al.' if len(author_tuple) > 3 else ''),
-            'authorFamily': ', '.join(aDict['family']
-                                      for aDict in author_tuple),
-            'title':        transform_to_title(convert_math_symbol_to_name(
-                repo_obj.metadata['title'])),
-            'identifier':   repo_obj.identifier.replace('/', '@'),
-            'year':         repo_obj.metadata['year'],
-            'year2':        repo_obj.metadata['year'][-2:],
+            'repo':              repo_obj.repo_name.lower(),
+            'authors':           author_str,
+            'authorEtAl':        (transform_to_author_str(author_tuple[:3])
+                                  + (', et al.'
+                                     if len(author_tuple) > 3
+                                     else '')),
+            'authorFamily':      ', '.join(aDict['family']
+                                           for aDict in author_tuple),
+            'authorFamilyCamel': ''.join(aDict['family'].capitalize()
+                                         for aDict in author_tuple),
+            'title':             doc_titlecase,
+            'title_':            '_'.join(w.capitalize()
+                                          for w in re_split('[ ,-]+',
+                                                            doc_titlecase)),
+            'identifier':        repo_obj.identifier.replace('/', '@'),
+            'year':              repo_obj.metadata['year'],
+            'year2':             repo_obj.metadata['year'][-2:],
         }
+        verbose_print(str(title_kw_dict), 3)
         try:
             proposedName = sanitize_filename(
                 cliArg.autoformat.format_map(title_kw_dict))
         except ValueError:
             info_print(PColor.ERROR("ERROR:"), end=" ")
+            info_print("Autoformat invalid. "
+                       "Name falls back to remote name")
+        except KeyError as e:
+            info_print(PColor.ERROR("ERROR:"), end=" ")
+            info_print(f"Unknown keyword: {e.args[0]}")
             info_print("Autoformat invalid. "
                        "Name falls back to remote name")
         else:

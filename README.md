@@ -54,9 +54,9 @@ Query string containing space must be enquoted
 
 `shdl "doi: 10.1109/5.771073"`
 
-(Limited) support for Springer link
+(Limited) support for Springer link. They are always parsed as DOI
 
-``shdl "doi: 10.1109/5.771073"``
+``shdl https://link.springer.com/referenceworkentry/10.1007/978-3-662-49054-9_923-1``
 
 ### Custom mirror sites
 
@@ -82,20 +82,27 @@ Will always use HTTPS if not specified
 
 Control autoname format with `--autoformat "<format string>"`
 
-`shdl 10.1109/5.771073 --autoname --autoformat "title is {title}"` → Output file
-name `title is Toward Unique Identifiers.pdf`
+`shdl arxiv:1110.2832 --autoname --autoformat "title is {title}"` → Output file
+name `title is Can Apparent Superluminal Neutrino Speeds be Explained as a Quantum Weak Measurement.pdf`
 
 Uses the [Python string formatting syntax](https://docs.python.org/3/library/string.html#formatstrings) with keyword
 arguments. Available keywords are:
 
-* `authors`: a string of comma separated names with given names abbreviated (e.g. `N. Paskin`)
-* `authorEtAl`: same as `authors`, but with only the first 3 names. Remaining names will be replaced with `et al.`
-* `authorFamily`: same as `authors`, but with family names only (e.g. `Paskin`)
-* `identifier`: the document identifier, with `/` replaced by `@` (e.g. `10.1109@5.771073`)
+* `authors`: a string of comma separated names with given names abbreviated (
+  e.g. `M. V. Berry, N. Brunner, S. Popescu, P. Shukla`)
+* `authorEtAl`: same as `authors`, but with only the first 3 names. Remaining names will be replaced with `et al.` (
+  e.g. `M. V. Berry, N. Brunner, S. Popescu, et al.`)
+* `authorFamily`: same as `authors`, but with family names only (e.g. `Berry, Brunner, Popescu, Shukla`)
+* `authorFamilyCamel`: same as `authorFamily`, but no separators between the family names (
+  e.g. `BerryBrunnerPopescuShukla`)
+* `identifier`: the document identifier, with `/` replaced by `@` (e.g. `10.1088@1751-8113@44@49@492001`)
 * `repo`: the name of file repository, in lower case (e.g. `doi`)
-* `title`: the title of the document, in title casing (e.g. `Toward Unique Identifiers`)
-* `year`: the 4-digit string of the recorded publication year
-* `year2`: the last 2 digits of `year`
+* `title`: the title of the document, in title casing (
+  e.g. `Can Apparent Superluminal Neutrino Speeds be Explained as a Quantum Weak Measurement`)
+* `title_`: same as `title`, but words are separated by a single underscore and every word is capitalized (
+  e.g. `Can_Apparent_Superluminal_Neutrino_Speeds_Be_Explained_As_A_Quantum_Weak_Measurement`)
+* `year`: the 4-digit string of the recorded publication year (e.g. `2011`)
+* `year2`: the last 2 digits of `year` (e.g. `11`)
 
 The algorithms used for checking author names and converting title into title casing are rather simple and may not give
 the desired results.
@@ -124,6 +131,7 @@ Note that the file extension is always untouched.
 
 * Support for PMID
 * Direct search with e.g. Google Scholar?
+* Better `--autoformat` syntax for flexibility?
 
 ### Usability
 
