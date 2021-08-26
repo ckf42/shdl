@@ -4,6 +4,8 @@ from unicodedata import category, name, normalize
 
 from typing import Dict, Tuple
 
+from src.CommonUtil import *
+
 if __name__ == '__main__':
     quit()
 
@@ -108,3 +110,42 @@ def transform_to_title(raw_title_str: str) -> str:
                 if w.lower() in _stopword_list \
                 else (w if w.isupper() else w.capitalize()),
                 word_list[1:]))
+
+
+def autoname_patcher(metadata_dict: dict,
+                     inputted_format_str: str) -> str:
+    """
+    Format filename with user inputted autoname format
+
+    :param metadata_dict: dict[str]
+        The metadata returned by _BaseRepoHandler
+    :param inputted_format_str: str
+        The (raw) user inputted format spec
+    :return: str.
+        The sanitized formatted filename.
+    """
+    author_tuple = metadata_dict['author']
+    author_str = transform_to_author_str(author_tuple)
+    doc_title = convert_math_symbol_to_name(metadata_dict['title'])
+    doc_titlecase = transform_to_title(doc_title)
+    title_kw_dict = {
+        'repo':              metadata_dict['repo'].lower(),
+        'authors':           author_str,
+        'authorEtAl':        (transform_to_author_str(author_tuple[:3])
+                              + (', et al.'
+                                 if len(author_tuple) > 3
+                                 else '')),
+        'authorFamily':      ', '.join(aDict['family']
+                                       for aDict in author_tuple),
+        'authorFamilyCamel': ''.join(aDict['family'].capitalize()
+                                     for aDict in author_tuple),
+        'title':             doc_titlecase,
+        'title_':            '_'.join(w.capitalize()
+                                      for w in split('[ ,-]+',
+                                                     doc_titlecase)),
+        'identifier':        metadata_dict['id'].replace('/', '@'),
+        'year':              metadata_dict['year'],
+        'year2':             metadata_dict['year'][-2:],
+    }
+    verbose_print("Available autoname var: " + str(title_kw_dict), 3)
+    return sanitize_filename(inputted_format_str.format_map(title_kw_dict))

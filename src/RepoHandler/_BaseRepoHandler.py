@@ -26,6 +26,11 @@ class _BaseRepoHandler(ABC):
         self.metadata_response = self.get_metadata_response()
         self.metadata = self.extract_metadata()
         self.is_meta_response_valid = self.metadata is not False
+        if self.is_meta_response_valid:
+            self.metadata.update({
+                'id':   self.identifier,
+                'repo': self.repo_name
+            })
 
     # abstract properties
     @classmethod
