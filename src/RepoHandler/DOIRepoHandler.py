@@ -102,8 +102,12 @@ class DOIRepoHandler(_BaseRepoHandler):
                        "Please report this DOI as a bug")
         return alt_metadata
 
-    def get_download_url(self, mirror_link):
+    def get_download_url(self,
+                         mirror_link,
+                         identifier_override: Optional[str] = None):
         # test mirror
+        if identifier_override is None:
+            identifier_override = self.identifier
         verbose_print("Checking if mirror "
                       + PColor.PATH(mirror_link)
                       + " is online ...")
@@ -122,7 +126,7 @@ class DOIRepoHandler(_BaseRepoHandler):
             return None
 
         # query mirror
-        query_url = urljoin(mirror_link, self.identifier)
+        query_url = urljoin(mirror_link, identifier_override)
         verbose_print("Querying " + PColor.PATH(query_url) + " ...")
         preview_resp = rq.get(query_url, **cliArg.rqKwargs)
         if (not preview_resp.headers['Content-Type'].startswith('text/html')) \
@@ -162,6 +166,7 @@ class DOIRepoHandler(_BaseRepoHandler):
     def alt_extract_metadata_jstor(self) -> Union[bool, dict, None]:
         """
         Alternative method to get metadata from JSTOR.
+        Also set self.metadata_response
 
         :return: bool (False), None or dict.
             Same as self.extract_metadata
@@ -170,6 +175,7 @@ class DOIRepoHandler(_BaseRepoHandler):
             id=self.identifier)
         verbose_print(f"Fetching from {PColor.PATH(query_url)}")
         jstor_resp = rq.get(query_url, **cliArg.rqKwargs)
+        self.metadata_response = jstor_resp
         if jstor_resp.status_code == 200 \
                 and jstor_resp.headers['Content-Type'] \
                 == 'application/x-research-info-systems':
@@ -186,7 +192,7 @@ class DOIRepoHandler(_BaseRepoHandler):
             if len(auth_list) != 0 and doc_title is not None:
                 # able to get the needed information
                 return {
-                    'author': tuple(dict(zip(('given', 'family'),
+                    'author': tuple(dict(zip(('family', 'given'),
                                              aItem.strip().rsplit(', ', 1)))
                                     for aItem in auth_list),
                     'title':  doc_title,
@@ -204,6 +210,7 @@ class DOIRepoHandler(_BaseRepoHandler):
     def alt_extract_metadata_aims(self) -> Union[bool, dict, None]:
         """
         Alternative method to get metadata from AIMS.
+        Also set self.metadata_response
 
         :return: bool (False), None or dict.
             Same as self.extract_metadata
@@ -229,6 +236,7 @@ class DOIRepoHandler(_BaseRepoHandler):
                 id=aims_internal_id),
             **cliArg.rqKwargs
         )
+        self.metadata_response = xml_resp
         # TODO check valid
         xml_root = eTree.fromstring(
             self.aims_xml_sanitizer.sub(

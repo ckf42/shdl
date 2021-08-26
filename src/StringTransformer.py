@@ -47,11 +47,11 @@ def transform_to_author_str(author_dict_tuple: Tuple[Dict[str, str]]) -> str:
     return ', '.join(
         (''.join(
             (gNamePart
-             # if len(gNamePart) <= 1 or not gNamePart.isalpha()
-             if not gNamePart.isalpha()
+             if len(gNamePart) <= 1 or not gNamePart.isalpha()
+             # if not gNamePart.isalpha()
              else (gNamePart[0] + '.'))
             for gNamePart
-            in split(r'\b', author_name_dict['given'])
+            in split(r'\b([.-]?)', author_name_dict['given'])
         ) + ' ' + author_name_dict['family'])
         for author_name_dict in author_dict_tuple)
 

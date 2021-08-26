@@ -3,6 +3,8 @@ from requests import Response as rq_Response
 
 from typing import Optional, Tuple, Union
 
+from src.CommonUtil import *
+
 if __name__ == '__main__':
     quit()
 
@@ -17,13 +19,16 @@ class _BaseRepoHandler(ABC):
 
     # init
     def __init__(self, raw_query_str: Optional[str] = None):
+        verbose_print("Initiating _Base", 3)
         if raw_query_str is None:
             return
         self.identifier = self.get_identifier(raw_query_str)
         self.is_query_valid = (self.identifier is not None)
         if not self.is_query_valid:
             return
+        verbose_print("Fetching metadata response", 3)
         self.metadata_response = self.get_metadata_response()
+        verbose_print("Extracting metadata", 3)
         self.metadata = self.extract_metadata()
         self.is_meta_response_valid = self.metadata is not False
         if self.is_meta_response_valid:
