@@ -16,7 +16,9 @@ class _BaseRepoHandler(ABC):
     is_meta_response_valid = None
 
     # init
-    def __init__(self, raw_query_str: str):
+    def __init__(self, raw_query_str: Optional[str] = None):
+        if raw_query_str is None:
+            return
         self.identifier = self.get_identifier(raw_query_str)
         self.is_query_valid = (self.identifier is not None)
         if not self.is_query_valid:

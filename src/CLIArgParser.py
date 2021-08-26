@@ -114,12 +114,11 @@ cliArgParser.add_argument("--verbose", "-v",
 cliArg = cliArgParser.parse_args()
 
 # cliArg handling
-from html import unescape
 import requests as rq
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse, unquote
 from src.CommonUtil import *
 
-cliArg.identifier = unescape(cliArg.identifier)
+cliArg.identifier = unquote(cliArg.identifier)
 
 # check if dir is valid
 if cliArg.dir is None:

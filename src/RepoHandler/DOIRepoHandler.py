@@ -22,7 +22,9 @@ if __name__ == '__main__':
 class DOIRepoHandler(_BaseRepoHandler):
     repo_name = "DOI"
     query_extract_pattern \
-        = r'^(https?://)?(dx\.|www\.)?doi(\.org/|:|/)\s*(.+)$'
+        = (r'^(https?://)?((www\.|dx\.)?doi(\.org)?|'
+           r'(link\.)?springer(\.com/(article|referenceworkentry))?)'
+           r'(:|/)?\s*(.+)$')
     mirror_list = cliArg.mirror
 
     # TODO change into a class property?
@@ -45,7 +47,7 @@ class DOIRepoHandler(_BaseRepoHandler):
                             raw_query_str,
                             flags=IGNORECASE)
         if match_gp:
-            return match_gp.group(4)
+            return match_gp.group(9)
         else:
             verbose_print(f"Failed parsing identifier as type {cls.repo_name}")
             return None
