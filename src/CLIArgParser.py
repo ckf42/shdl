@@ -109,51 +109,113 @@ cliArgParser.add_argument("--dryrun",
                           action='store_true',
                           help="Do not actually write on disk or "
                                "download the file")
+cliArgParser.add_argument("--config",
+                          type=str,
+                          help="The path to the config file. "
+                               "If the path is specified, "
+                               "the following configs will be overridden "
+                               "from file (instead of the CLI argument) "
+                               "if they are present: "
+                               "proxy, mirror, dir, chunk, useragent, "
+                               "autoname, autoformat")
 cliArgParser.add_argument("--verbose", "-v",
                           action='count',
                           default=0,
                           help="Display verbose information")
-cliArg = cliArgParser.parse_args()
+cliArg = vars(cliArgParser.parse_args())
 
 # cliArg handling
 import requests as rq
 from urllib.parse import urlparse, urlunparse, unquote
 from src.CommonUtil import *
 
-cliArg.identifier = unquote(cliArg.identifier)
+cliArg['identifier'] = unquote(cliArg['identifier'])
+
+# read config file if present
+if cliArg['config'] is None \
+        and (defPath := Path.home() / '.shdlconfig').is_file():
+    # get default
+    verbose_print("Default config file found")
+    cliArg['config'] = str(defPath)
+if cliArg['config'] is not None:
+    try:
+        configPath = Path(cliArg['config'])
+        if not configPath.is_file():
+            raise FileNotFoundError
+        configFileHandle = configPath.open('rt')
+        verbose_print("Config file opened", 2)
+        configDict = dict()
+        verbose_print("Reading config file "
+                      + PColor.PATH(str(configPath.resolve())))
+        for configLine in configFileHandle:
+            if '=' not in configLine:
+                continue
+            splittedLine = configLine.strip().split('=', 1)
+            lineHeader = splittedLine[0].lower()
+            lineContent = '' if len(splittedLine) <= 1 else splittedLine[1]
+            isValidHeader = True
+            if lineHeader in ('proxy', 'dir', 'useragent', 'autoformat'):
+                configDict[lineHeader] = lineContent
+            elif lineHeader == 'mirror':
+                if 'mirror' not in configDict:
+                    configDict['mirror'] = list((lineContent,))
+                else:
+                    configDict['mirror'].append(lineContent)
+            elif lineHeader == 'chunk':
+                configDict['chunk'] = int(lineContent)
+            elif lineHeader == 'autoname':
+                configDict['autoname'] = lineContent = True
+            else:
+                isValidHeader = False
+            if isValidHeader:
+                verbose_print(f"Config {lineHeader} found "
+                              f"with key {lineContent}")
+        verbose_print(f"Overriding {list(configDict.keys())}", 2)
+        cliArg.update(configDict)
+    except (FileNotFoundError, PermissionError):
+        info_print(PColor.ERROR("ERROR:"), end=" ")
+        info_print("Cannot read specified config file "
+                   f"{PColor.PATH(str(cliArg['config']))}")
+    except ValueError:
+        info_print(PColor.ERROR("ERROR:"), end=" ")
+        info_print("Cannot parse config file. "
+                   "Will revert to CLI arguments")
+else:
+    verbose_print("No config file", 2)
 
 # check if dir is valid
-if cliArg.dir is None:
-    cliArg.dir = '.'
-assert isinstance(cliArg.dir, str)
-cliArg.dir = cliArg.dir.strip(" '\"")
+if cliArg['dir'] is None:
+    cliArg['dir'] = '.'
+assert isinstance(cliArg['dir'], str)
+cliArg['dir'] = cliArg['dir'].strip(" '\"")
 try:
-    cliArg.dir = (Path.cwd() / Path(cliArg.dir).expanduser()).resolve(True)
-    if not cliArg.dir.is_dir():
+    cliArg['dir'] = (Path.cwd() / Path(cliArg['dir']).expanduser()).resolve(
+        True)
+    if not cliArg['dir'].is_dir():
         raise NotADirectoryError
 except (NotADirectoryError, FileNotFoundError):
     error_reporter.quit_now(ErrorType.ARG_INVALID,
-                            error_msg=f"{str(cliArg.dir)} is not "
+                            error_msg=f"{str(cliArg['dir'])} is not "
                                       "a valid directory")
 
 # check mirror format
-if cliArg.mirror is None:
+if cliArg['mirror'] is None:
     # info_print(PColor.ERROR("Error:"), end=" ")
     # info_print("No mirror provided")
     # error_reporter.quit_now(ErrorType.ARG_INVALID)
-    cliArg.mirror = ("https://sci-hub.se/",)
+    cliArg['mirror'] = ("https://sci-hub.se/",)
 else:
-    cliArg.mirror = tuple(
+    cliArg['mirror'] = tuple(
         # enforce https if not specified
         urlunparse(urlparse(mirrorURL, scheme="https"))
-        for mirrorURL in cliArg.mirror
+        for mirrorURL in cliArg['mirror']
     )
 
 # check network and proxy
-cliArg.proxy = {scheme: cliArg.proxy for scheme in ('http', 'https')} \
-    if cliArg.proxy is not None and cliArg.proxy != '' \
+cliArg['proxy'] = {scheme: cliArg['proxy'] for scheme in ('http', 'https')} \
+    if cliArg['proxy'] is not None and cliArg['proxy'] != '' \
     else None
-if cliArg.proxy is None:
+if cliArg['proxy'] is None:
     info_print(PColor.WARNING("WARNING:"), end=" ")
     info_print("No proxy configured")
 
@@ -161,14 +223,14 @@ verbose_print("Testing network connectivity ...")
 try:
     pass
     rq.get('https://example.com',
-           proxies=cliArg.proxy,
-           headers={'User-Agent': cliArg.useragent})
+           proxies=cliArg['proxy'],
+           headers={'User-Agent': cliArg['useragent']})
 except rq.exceptions.ProxyError:
     info_print(PColor.ERROR('ERROR:') + " Proxy config is invalid")
     error_reporter.quit_now(ErrorType.ARG_INVALID)
 except rq.ConnectionError:
     info_print(PColor.ERROR("ERROR:") + " Failed to connect to the internet")
-    if cliArg.proxy is not None:
+    if cliArg['proxy'] is not None:
         info_print("Maybe proxy is not setup correctly?")
     error_reporter.quit_now(ErrorType.NETWORK_ERROR)
 except Exception as e:
@@ -177,9 +239,9 @@ except Exception as e:
     info_print(str(e))
     error_reporter.quit_now(ErrorType.NETWORK_ERROR)
 else:
-    if cliArg.proxy is not None:
-        verbose_print(f"Using proxy {cliArg.proxy['https']}")
-cliArg.rqKwargs = {
-    'proxies': cliArg.proxy,
-    'headers': {'User-Agent': cliArg.useragent, }
+    if cliArg['proxy'] is not None:
+        verbose_print(f"Using proxy {cliArg['proxy']['https']}")
+cliArg['rqKwargs'] = {
+    'proxies': cliArg['proxy'],
+    'headers': {'User-Agent': cliArg['useragent'], }
 }

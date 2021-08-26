@@ -11,14 +11,14 @@ if __name__ == '__main__':
     quit()
 
 
-def _get_local_file_handler(write_path_obj: Path) -> Union[
-    BufferedWriter, bool]:
+def _get_local_file_handler(
+        write_path_obj: Path) -> Union[BufferedWriter, bool]:
     if len(str(write_path_obj)) >= 250:
         info_print(PColor.ERROR("ERROR:"), end=" ")
         info_print("Target download path is too long")
         error_reporter.add_new_error(ErrorType.OUTPUT_ERROR)
         return False
-    if cliArg.dryrun:
+    if cliArg['dryrun']:
         return True
     verbose_print(f"Downloading to {PColor.PATH(str(write_path_obj))}")
     try:
@@ -36,7 +36,7 @@ def _get_local_file_handler(write_path_obj: Path) -> Union[
 def _download_file_to_local(target_url: str,
                             local_file_handle: BufferedWriter,
                             **kwargs) -> bool:
-    if cliArg.dryrun:
+    if cliArg['dryrun']:
         # just to be safe
         assert local_file_handle.closed
         return True
@@ -52,7 +52,7 @@ def _download_file_to_local(target_url: str,
             file_size = int(file_size)
             info_print("File size: " + human_byte_unit_string(file_size))
         with local_file_handle:
-            for data_chunk in dl_res.iter_content(chunk_size=cliArg.chunk):
+            for data_chunk in dl_res.iter_content(chunk_size=cliArg['chunk']):
                 local_file_handle.write(data_chunk)
                 downloaded_size += len(data_chunk)
                 if file_size is None:
@@ -79,7 +79,7 @@ def fetch_url_to_local_path(target_url: str,
     dl_success_status = _download_file_to_local(target_url,
                                                 file_handle,
                                                 **kwargs)
-    if cliArg.piping and dl_success_status:
+    if cliArg['piping'] and dl_success_status:
         info_print(str(target_local_path_obj.resolve(True)),
                    print_suppress=False)
     return dl_success_status

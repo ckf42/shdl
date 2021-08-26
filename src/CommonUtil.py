@@ -16,7 +16,7 @@ class PColor(Enum):
     NULL = '\033[0m'
 
     def __call__(self, msg: str,
-                 color_display: bool = not cliArg.nocolor) -> str:
+                 color_display: bool = not cliArg['nocolor']) -> str:
         # def __call__(self, *args, **kwargs):
         if not color_display:
             return msg
@@ -24,7 +24,7 @@ class PColor(Enum):
             return f"{self.value}{msg}\033[0m"
 
 
-def info_print(msg: str, *args, print_suppress: bool = cliArg.piping,
+def info_print(msg: str, *args, print_suppress: bool = cliArg['piping'],
                **kwargs) -> None:
     if not print_suppress:
         print(msg, *args, **kwargs)
@@ -33,7 +33,7 @@ def info_print(msg: str, *args, print_suppress: bool = cliArg.piping,
 def verbose_print(
         msg: str,
         msg_verbose_level: int = 1,
-        config_verbose_level: int = cliArg.verbose
+        config_verbose_level: int = cliArg['verbose']
 ) -> None:
     if msg_verbose_level <= config_verbose_level:
         info_print(msg)

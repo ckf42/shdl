@@ -123,11 +123,50 @@ Note that the file extension is always untouched.
 
 ### JSTOR supprt
 
-Still experimental
+Experimental
 
 `shdl "jstor: 26494158"`
 
 `shdl https://www.jstor.org/stable/26494158`
+
+## Config file
+
+You can store your configurations for `shdl` in a UTF-8 encoded text file.
+
+By default, `shdl` will look for `.shdlconfig` at home directory `~` (Windows: `%USERPROFILE%`). You can also specify
+the path to this file with `--config`
+
+If this file exists (and can be read), it will be parsed line by line as follows:
+
+* Lines that start with one of these keywords (`proxy`, `mirror`, `dir`, `chunk`, `useragent`, `autoname`
+  , `autoformat`, case-insensitive) followed by an equal sign `=` are parsed
+    * The remaining portion of the line is taken as parameter.
+    * If these keywords `proxy`, `dir`, `useragent`, `chunk`, `autoformat` are specified more than once, only the last
+      one is used.
+    * If the keyword is `autoname`, `--autoname` will be set (as `True`), ignoring the parameter.
+    * `mirror` can be specified multiple times for multiple mirrors.
+* All other lines are ignored.
+
+Entries in `.shdlconfig` have higher priority than commandline arguments, meaning that the corresponding commandline
+arguments **will be discarded**.
+
+### Example
+
+```text
+proxy=socks5h://127.0.0.1:9050
+this line will be ignored
+this=line=will=also=be=ignored
+mirror=first.mirror
+dir=~/document directory to save file
+mirror=second.mirror
+autoname=these words will be ignored
+```
+
+is the same as
+specifying `--proxy socks5h://127.0.0.1:9050 --mirror first.mirror --dir "~/document directory to save file" --mirror second.mirror --autoname`
+when calling `shdl`
+
+Note that argument for `--dir` is `"~/document directory to save file"`
 
 ## Dependencies
 

@@ -25,7 +25,7 @@ class DOIRepoHandler(_BaseRepoHandler):
         = (r'^(https?://)?((www\.|dx\.)?doi(\.org)?|'
            r'(link\.)?springer(\.com/(article|referenceworkentry))?)'
            r'(:|/)?\s*(.+)$')
-    mirror_list = cliArg.mirror
+    mirror_list = cliArg['mirror']
 
     # TODO change into a class property?
     link_extractor = re_compile(
@@ -112,7 +112,7 @@ class DOIRepoHandler(_BaseRepoHandler):
                       + PColor.PATH(mirror_link)
                       + " is online ...")
         try:
-            if rq.get(mirror_link, **cliArg.rqKwargs).status_code != 200:
+            if rq.get(mirror_link, **cliArg['rqKwargs']).status_code != 200:
                 raise rq.exceptions.ConnectionError
         except (rq.exceptions.MissingSchema,
                 rq.exceptions.InvalidSchema,
@@ -122,13 +122,14 @@ class DOIRepoHandler(_BaseRepoHandler):
             return None
         except rq.exceptions.ConnectionError:
             info_print(PColor.ERROR("ERROR:"), end=" ")
-            info_print(f"Cannot connect to {mirror_link}")
+            info_print(f"Cannot connect to {mirror_link} "
+                       "Maybe it is not online (for you)?")
             return None
 
         # query mirror
         query_url = urljoin(mirror_link, identifier_override)
         verbose_print("Querying " + PColor.PATH(query_url) + " ...")
-        preview_resp = rq.get(query_url, **cliArg.rqKwargs)
+        preview_resp = rq.get(query_url, **cliArg['rqKwargs'])
         if (not preview_resp.headers['Content-Type'].startswith('text/html')) \
                 or len(preview_resp.text.strip('\n ')) == 0:
             info_print(PColor.ERROR("ERROR:"), end=" ")
@@ -139,14 +140,15 @@ class DOIRepoHandler(_BaseRepoHandler):
         verbose_print("Finding download link ...")
         possible_link = list()
         for line in preview_resp.text.splitlines():
-            line = unescape(line)
-            if (match_obj \
-                    := self.link_extractor.search(line,
-                                                  IGNORECASE)) is not None:
+            line = unescape(line).strip()
+            if (match_obj := self
+                    .link_extractor.search(line, IGNORECASE)) is not None:
                 verbose_print(f"Line with possible link: {line}", 2)
                 dl_url = urlunparse(
-                    urlparse(match_obj.group(1).rsplit('#', 1)[0],
-                             scheme='https'))
+                    urlparse(match_obj.group(1)
+                             .rsplit('#', 1)[0]  # rm fragment
+                             .replace(r'\/', '/'),  # unescape \/
+                             scheme='https'))  # force scheme if missing
                 verbose_print("Link found: " + PColor.PATH(dl_url))
                 possible_link.append(dl_url)
         if len(possible_link) == 0:
@@ -174,7 +176,7 @@ class DOIRepoHandler(_BaseRepoHandler):
         query_url = 'https://www.jstor.org/citation/ris/{id}'.format(
             id=self.identifier)
         verbose_print(f"Fetching from {PColor.PATH(query_url)}")
-        jstor_resp = rq.get(query_url, **cliArg.rqKwargs)
+        jstor_resp = rq.get(query_url, **cliArg['rqKwargs'])
         self.metadata_response = jstor_resp
         if jstor_resp.status_code == 200 \
                 and jstor_resp.headers['Content-Type'] \
@@ -220,7 +222,7 @@ class DOIRepoHandler(_BaseRepoHandler):
         query_url = 'https://www.aimsciences.org/article/doi/{id}'.format(
             id=self.identifier)
         verbose_print(f"Fetching from {PColor.PATH(query_url)}")
-        aims_resp = rq.get(query_url, headers=cliArg.rqKwargs['headers'])
+        aims_resp = rq.get(query_url, headers=cliArg['rqKwargs']['headers'])
         # TODO check valid
         aims_internal_id = None
         for line in aims_resp.text.splitlines():
@@ -236,7 +238,7 @@ class DOIRepoHandler(_BaseRepoHandler):
             'https://www.aimsciences.org/article/'
             'exportXML?ids={id}&downType=XML'.format(
                 id=aims_internal_id),
-            **cliArg.rqKwargs
+            **cliArg['rqKwargs']
         )
         self.metadata_response = xml_resp
         # TODO check valid

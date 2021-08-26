@@ -13,7 +13,7 @@ class JSTORRepoHandler(DOIRepoHandler):
     repo_name = "JSTOR"
     query_extract_pattern \
         = r'^(https?://)?(www\.)?jstor(\.org/stable/|:)?\s*(.+)$'
-    mirror_list = cliArg.mirror
+    mirror_list = cliArg['mirror']
 
     extract_metadata = DOIRepoHandler.alt_extract_metadata_jstor
 
@@ -38,7 +38,7 @@ class JSTORRepoHandler(DOIRepoHandler):
         # query_url = 'https://www.jstor.org/citation/ris/{id}'.format(
         #     id=self.identifier)
         # verbose_print(f"Fetching from {PColor.PATH(query_url)}")
-        # return rq.get(query_url, **cliArg.rqKwargs)
+        # return rq.get(query_url, **cliArg['rqKwargs'])
         return None
 
     def get_download_url(self, mirror_link):
