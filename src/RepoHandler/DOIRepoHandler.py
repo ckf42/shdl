@@ -192,6 +192,8 @@ class DOIRepoHandler(_BaseRepoHandler):
             if len(auth_list) != 0 and doc_title is not None:
                 # able to get the needed information
                 return {
+                    # not sure if RIS always put family name first
+                    # may have seen counter-example?
                     'author': tuple(dict(zip(('family', 'given'),
                                              aItem.strip().rsplit(', ', 1)))
                                     for aItem in auth_list),

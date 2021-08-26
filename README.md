@@ -117,9 +117,17 @@ Note that the file extension is always untouched.
 
 ### arXiv support
 
-`shdl arxiv:1501.00001`
+`shdl "arxiv: 1501.00001"`
 
 `shdl https://arxiv.org/abs/1501.00001`
+
+### JSTOR supprt
+
+Still experimental
+
+`shdl "jstor: 26494158"`
+
+`shdl https://www.jstor.org/stable/26494158`
 
 ## Dependencies
 
