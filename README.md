@@ -11,16 +11,16 @@ A script to fetch files by their identifiers
 
 ## Install
 
-Only available as a python script for now. To use it, you will need to install:
+To use the script, you will need:
 
-* Python 3
+* Python 3.8+
 * [requests](https://pypi.org/project/requests/ "PyPI page")
     * install with `pip install --user requests`
 * [PySocks](https://pypi.org/project/PySocks/ "PyPI page")
     * if you need to use socks proxy (e.g. TOR), install this with `pip install --user PySocks`
-    * alternatively install `requests` with socks extra `pip install --user requests[socks]`
+    * alternatively install `requests` with socks extra via `pip install --user requests[socks]`
 
-Standalone executable is not yet available.
+[Standalone executable](https://github.com/ckf42/shdl/releases) is (currently) only available for Windows x64 and is considered experimental. Use at your own risk. 
 
 ## Usage
 
@@ -184,7 +184,7 @@ Note that argument for `--dir` is `"~/document directory to save file"`
 
 ### Usability
 
-* Export as (cross-platform?) standalone executable
+* Export as standalone executable
 * Provide module integration
 * Optimize dependencies
     * Use urllib instead of requests?
