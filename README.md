@@ -20,9 +20,11 @@ To use the script, you will need:
     * if you need to use socks proxy (e.g. TOR), install this with `pip install --user PySocks`
     * alternatively install `requests` with socks extra via `pip install --user requests[socks]`
 
-You can simple clone this repo and install Python along with all the dependency packages with `pip install -r requirements.txt`. The script would then be ready for use.
+You can simply clone this repo and install Python along with all the dependency packages
+with `pip install -r requirements.txt`. The script would then be ready for use.
 
-[Standalone executable](https://github.com/ckf42/shdl/releases) is (currently) only available for Windows x64 and is considered experimental. Use at your own risk. 
+[Standalone executable](https://github.com/ckf42/shdl/releases) is (currently) only available for Windows x64 and is
+considered experimental. Use at your own risk.
 
 ## Usage
 

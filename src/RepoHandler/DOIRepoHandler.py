@@ -2,8 +2,10 @@ import requests as rq
 
 from urllib.parse import urljoin, urlparse, urlunparse
 from re import match as re_match
+from re import search as re_search
 from re import sub as re_sub
 from re import compile as re_compile
+from re import findall as re_findall
 from re import IGNORECASE, MULTILINE
 from html import unescape, escape
 from unicodedata import category as ud_category
@@ -261,6 +263,52 @@ class DOIRepoHandler(_BaseRepoHandler):
                        else pDate.text.strip()[:4])
         }
 
+    def alt_extract_metadata_royalsocpub(self) -> Union[bool, dict, None]:
+        """
+        Alternative method to get metadata from Royal Society Publishing.
+        Also set self.metadata_response
+
+        :return: bool (False), None or dict.
+            Same as self.extract_metadata
+        """
+        query_url = 'https://royalsocietypublishing.org/doi/{id}'.format(
+            id=self.identifier)
+        verbose_print(f"Fetching from {PColor.PATH(query_url)}")
+        royal_resp = rq.get(query_url, headers=cliArg['rqKwargs']['headers'])
+        # PaRsInG HtMl wItH rEgEx !!!1!11!!!
+        # TODO need better method
+        article_title = (
+            match_obj.group(1)
+            if (match_obj := re_search(
+                r'<meta name="dc\.Title" content="(.+?)">',
+                royal_resp.text)) is not None
+            else None
+        )
+        author_list = re_findall(
+            r'<span class="hlFld-ContribAuthor">\s*<a.+?title="(.+?)">',
+            royal_resp.text
+        )
+        pub_year = (
+            match_obj.group(1)
+            if (match_obj := re_search(
+                r'<meta name="dc\.Date".+content="(\d{4})-\d{2}-\d{2}">',
+                royal_resp.text,
+                flags=IGNORECASE)) is not None
+            else ''
+        )
+        if article_title is not None and len(author_list) != 0:
+            return {
+                'author': tuple(dict(zip(('family', 'given'),
+                                         authorStr.strip().split(' ', 1)))
+                                for authorStr in author_list),
+                'title':  article_title,
+                'year':   pub_year
+            }
+            pass
+        else:
+            # even webpage record is incomplete
+            return None
+
     def alt_extract_metadata(self) -> Union[bool, dict, None]:
         """
         Alternative method to get metadata.
@@ -274,7 +322,9 @@ class DOIRepoHandler(_BaseRepoHandler):
         verbose_print(f"Document host: {self_host}")
         metadata_getter_func = {
             'www.jstor.org':       self.alt_extract_metadata_jstor,
-            'www.aimsciences.org': self.alt_extract_metadata_aims
+            'www.aimsciences.org': self.alt_extract_metadata_aims,
+            'royalsocietypublishing.org':
+                                   self.alt_extract_metadata_royalsocpub,
         }.get(self_host, None)
         if metadata_getter_func is None:
             info_print(PColor.ERROR("ERROR:"), end=" ")

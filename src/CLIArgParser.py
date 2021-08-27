@@ -177,6 +177,7 @@ if cliArg['config'] != '':
             if isValidHeader:
                 verbose_print(f"Config {lineHeader} found "
                               f"with key {lineContent}")
+        configFileHandle.close()
         verbose_print(f"Overriding {list(configDict.keys())}", 2)
         cliArg.update(configDict)
     except FileNotFoundError:
@@ -190,6 +191,7 @@ if cliArg['config'] != '':
         info_print("Cannot read specified config file "
                    f"{PColor.PATH(cliArg['config'])}")
     except ValueError:
+        # TODO check if configFileHandle is closed properly here
         info_print(PColor.ERROR("ERROR:"), end=" ")
         info_print("Cannot parse config file. "
                    "Will revert to CLI arguments")
