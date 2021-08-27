@@ -51,8 +51,9 @@ def transform_to_author_str(author_dict_tuple: Tuple[Dict[str, str]]) -> str:
              # if not gNamePart.isalpha()
              else (gNamePart[0] + '.'))
             for gNamePart
-            in split(r'\b([.-]?)', author_name_dict['given'])
-        ) + ' ' + author_name_dict['family'])
+            in split(r'\b([.-]?)',
+                     sanitize_filename(author_name_dict['given']))
+        ) + ' ' + sanitize_filename(author_name_dict['family']))
         for author_name_dict in author_dict_tuple)
 
 
@@ -84,7 +85,7 @@ _stopword_list = (
     'same', 'should', 'so', 'some', 'such', 't', 'than', 'that', 'the',
     'then', 'there', 'these', 'this', 'those', 'through', 'to', 'too',
     'under', 'until', 'up', 'very', 'was', 'were', 'what', 'when', 'where',
-    'which', 'while', 'who', 'whom', 'why', 'will', 'with',
+    'which', 'while', 'who', 'whom', 'why', 'will', 'with', 'without',
 )
 
 
@@ -98,7 +99,7 @@ def transform_to_title(raw_title_str: str) -> str:
     :return: str.
         The converted string in title casing
     """
-    word_list = split(r'([ \-])\b', raw_title_str)
+    word_list = split(r'([ \-])\b', sanitize_filename(raw_title_str))
     if len(word_list) <= 1:
         return raw_title_str
     else:
@@ -132,8 +133,8 @@ def autoname_patcher(metadata_dict: dict,
                for k in ('family', 'given'))
     author_tuple = metadata_dict['author']
     author_str = transform_to_author_str(author_tuple)
-    doc_title = convert_math_symbol_to_name(metadata_dict['title'])
-    doc_titlecase = transform_to_title(doc_title)
+    doc_titlecase = transform_to_title(
+        convert_math_symbol_to_name(metadata_dict['title']))
     title_kw_dict = {
         'repo':              metadata_dict['repo'].lower(),
         'authors':           author_str,

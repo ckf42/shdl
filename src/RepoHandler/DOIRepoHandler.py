@@ -126,7 +126,7 @@ class DOIRepoHandler(_BaseRepoHandler):
             return None
         except rq.exceptions.ConnectionError:
             info_print(PColor.ERROR("ERROR:"), end=" ")
-            info_print(f"Cannot connect to {mirror_link} "
+            info_print(f"Cannot connect to {mirror_link}. "
                        "Maybe it is not online (for you)?")
             return None
 
