@@ -133,6 +133,14 @@ Experimental
 
 `shdl https://www.jstor.org/stable/26494158`
 
+### ScienceDirect support
+
+Experimental
+
+`shdl "scidir: S0273117721000740"`
+
+`shdl https://www.sciencedirect.com/science/article/pii/S0273117721000740`
+
 ## Config file
 
 You can store your configurations for `shdl` in a UTF-8 encoded text file.
