@@ -141,6 +141,8 @@ Experimental
 
 `shdl https://www.sciencedirect.com/science/article/pii/S0273117721000740`
 
+If the target document has a DOI, `shdl` will always use it.
+
 ## Config file
 
 You can store your configurations for `shdl` in a UTF-8 encoded text file.
