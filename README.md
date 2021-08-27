@@ -138,7 +138,7 @@ Experimental
 You can store your configurations for `shdl` in a UTF-8 encoded text file.
 
 By default, `shdl` will look for `.shdlconfig` at home directory `~` (Windows: `%USERPROFILE%`). You can also specify
-the path to this file with `--config`
+the path to this file with `--config`.
 
 If this file exists (and can be read), it will be parsed line by line as follows:
 
@@ -152,7 +152,9 @@ If this file exists (and can be read), it will be parsed line by line as follows
 * All other lines are ignored.
 
 Entries in `.shdlconfig` have higher priority than commandline arguments, meaning that the corresponding commandline
-arguments **will be discarded**.
+arguments **will be discarded**. To suppress this behavior, use an empty `.shdlconfig` file, or simply provide an empty string for the option (`--config ""`)
+
+**NOTE** This feature is experimental and is subject to change.
 
 ### Example
 
@@ -189,6 +191,7 @@ Note that argument for `--dir` is `"~/document directory to save file"`
 ### Usability
 
 * Export as standalone executable
+    * Pyinstaller with UPX produced 9MB standalone executable with slow startup time. 
 * Provide module integration
 * Optimize dependencies
     * Use urllib instead of requests?
