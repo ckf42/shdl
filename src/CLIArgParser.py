@@ -144,7 +144,9 @@ cliArg['identifier'] = unquote(cliArg['identifier'])
 # if cliArg['config'] is not None:
 if cliArg['config'] != '':
     try:
-        configPath = Path(cliArg['config'])
+        configPath = Path(cliArg['config']).expanduser()
+        verbose_print("Looking for config file "
+                      f"{PColor.PATH(str(configPath))}")
         if not configPath.is_file():
             raise FileNotFoundError
         configFileHandle = configPath.open('rt')
