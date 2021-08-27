@@ -152,7 +152,8 @@ If this file exists (and can be read), it will be parsed line by line as follows
 * All other lines are ignored.
 
 Entries in `.shdlconfig` have higher priority than commandline arguments, meaning that the corresponding commandline
-arguments **will be discarded**. To suppress this behavior, use an empty `.shdlconfig` file, or simply provide an empty string for the option (`--config ""`)
+arguments **will be discarded**. To suppress this behavior, use an empty `.shdlconfig` file, or simply provide an empty
+string for the option (`--config ""`)
 
 **NOTE** This feature is experimental and is subject to change.
 
@@ -191,8 +192,14 @@ Note that argument for `--dir` is `"~/document directory to save file"`
 ### Usability
 
 * Export as standalone executable
-    * Pyinstaller with UPX produced 9MB standalone executable with slow startup time. 
+    * Pyinstaller with UPX produced 9MB standalone executable with slow startup time.
 * Provide module integration
+
+### Design
+
+* Separate metadata processing (on e.g. JSON, XML, RIS) into its own file
+* Check if some class methods in `_BaseRepoHandler` can be converted to normal methods
+* Reduce verbose level
 * Optimize dependencies
     * Use urllib instead of requests?
 

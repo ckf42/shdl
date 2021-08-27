@@ -43,6 +43,8 @@ class DOIRepoHandler(_BaseRepoHandler):
     aims_xml_sanitizer = re_compile('\\s*<(.+?)>(.+?)</\\1>\\s*',
                                     flags=IGNORECASE | MULTILINE)
 
+    # Why is this a class method?
+    # TODO check if this has to be a class method
     @classmethod
     def get_identifier(cls, raw_query_str):
         match_gp = re_match(cls.query_extract_pattern,
@@ -182,7 +184,7 @@ class DOIRepoHandler(_BaseRepoHandler):
         self.metadata_response = jstor_resp
         if jstor_resp.status_code == 200 \
                 and jstor_resp.headers['Content-Type'] \
-                == 'application/x-research-info-systems':
+                .startswith('application/x-research-info-systems'):
             auth_list = list()
             doc_title = None
             publish_year = ''
