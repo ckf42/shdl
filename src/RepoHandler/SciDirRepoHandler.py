@@ -11,7 +11,7 @@ if __name__ == '__main__':
 class SciDirRepoHandler(DOIRepoHandler):
     repo_name = "ScienceDirect"
     query_extract_pattern \
-        = r'^(https?://)?(www\.)?sci(ence)?dir(ect)' \
+        = r'^(https?://)?(www\.)?sci(ence)?dir(ect)?' \
           r'(\.com/science/article/|:|/)\s*((.+?/)?\s*.+)$'
     mirror_list = cliArg['mirror']
 
