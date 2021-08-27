@@ -30,7 +30,14 @@ class SciDirRepoHandler(DOIRepoHandler):
 
     def get_metadata_response(self):
         verbose_print(f"Fetching metadata for type {self.repo_name}...")
-        self.doc_type, self.identifier = self.identifier.split('/', 1)
+        splitted_id = self.identifier.split('/', 1)
+        if len(splitted_id) == 1:
+            info_print(PColor.WARNING("WARNING:"), end=" ")
+            info_print("Cannot decide identifier type. "
+                       "Assuming it is PII")
+            self.doc_type, self.identifier = 'pii', self.identifier
+        else:
+            self.doc_type, self.identifier = splitted_id
         verbose_print(f"Discovered identifier type: {self.doc_type}")
         return rq.get(
             'https://www.sciencedirect.com/sdfe/arp/cite?'
