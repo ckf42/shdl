@@ -109,6 +109,20 @@ class DOIRepoHandler(_BaseRepoHandler):
     def get_download_url(self,
                          mirror_link,
                          identifier_override: Optional[str] = None):
+        """
+        Get file download link
+
+        Returns the direct download link to the file.
+        If unable to get the download link, returns None
+
+        :param mirror_link: str.
+            The URL of the mirror used to fetch the file
+        :param identifier_override: Optional[str].
+            The path used for querying mirror.
+            If None, will use self.identifier
+        :return: str, or None.
+        """
+
         # test mirror
         if identifier_override is None:
             identifier_override = self.identifier

@@ -51,7 +51,7 @@ def transform_to_author_str(author_dict_tuple: Tuple[Dict[str, str]]) -> str:
              # if not gNamePart.isalpha()
              else (gNamePart[0] + '.'))
             for gNamePart
-            in split(r'\b([.-]?)',
+            in split(r'\b([.\-]?)',
                      sanitize_filename(author_name_dict['given']))
         ) + ' ' + sanitize_filename(author_name_dict['family']))
         for author_name_dict in author_dict_tuple)
@@ -148,10 +148,10 @@ def autoname_patcher(metadata_dict: dict,
                                      for aDict in author_tuple),
         'title':             doc_titlecase,
         'title_':            '_'.join(w.capitalize()
-                                      for w in split('[ ,\\-]+',
+                                      for w in split(r'[ ,\-]+',
                                                      doc_titlecase)),
         'titleCamel':        ''.join(w.capitalize()
-                                     for w in split('[ ,\\-]+',
+                                     for w in split(r'[ ,\-]+',
                                                     doc_titlecase)),
         'identifier':        metadata_dict['id'].replace('/', '@'),
         'year':              metadata_dict['year'],

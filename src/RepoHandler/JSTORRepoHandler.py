@@ -41,7 +41,7 @@ class JSTORRepoHandler(DOIRepoHandler):
         # return rq.get(query_url, **cliArg['rqKwargs'])
         return None
 
-    def get_download_url(self, mirror_link):
+    def get_download_url(self, mirror_link, **kwargs):
         assert self.metadata_response is not None
         identifier_override = None
         for line in self.metadata_response.text.splitlines():

@@ -141,7 +141,7 @@ Experimental
 
 `shdl https://www.sciencedirect.com/science/article/pii/S0273117721000740`
 
-If the target document has a DOI, `shdl` will always use it.
+If the target document has a DOI, `shdl` will always use it for file fetching.
 
 ## Config file
 
@@ -169,11 +169,14 @@ string for the option (`--config ""`)
 
 ### Example
 
+Putting the following content in `.shdlconfig`
+
 ```text
 proxy=socks5h://127.0.0.1:9050
 this line will be ignored
 this=line=will=also=be=ignored
 mirror=first.mirror
+dir=./this_will_not_be_used
 dir=~/document directory to save file
 mirror=second.mirror
 autoname=these words will be ignored
@@ -207,9 +210,6 @@ Note that argument for `--dir` is `"~/document directory to save file"`
 
 ### Design
 
-* Separate metadata processing (on e.g. JSON, XML, RIS) into its own file
-* Check if some class methods in `_BaseRepoHandler` can be converted to normal methods
-* Reduce verbose level
 * Optimize dependencies
     * Use urllib instead of requests?
 

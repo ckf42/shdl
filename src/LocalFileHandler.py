@@ -11,12 +11,11 @@ if __name__ == '__main__':
     quit()
 
 
-def _get_local_file_handler(
+def _get_local_file_write_handler(
         write_path_obj: Path) -> Union[BufferedWriter, bool]:
     if len(str(write_path_obj)) >= 250:
         info_print(PColor.ERROR("ERROR:"), end=" ")
         info_print("Target download path is too long")
-        error_reporter.add_new_error(ErrorType.OUTPUT_ERROR)
         return False
     if cliArg['dryrun']:
         return True
@@ -28,7 +27,6 @@ def _get_local_file_handler(
         info_print(PColor.ERROR("ERROR:"), end=" ")
         info_print("Cannot write to "
                    f"target path \"{PColor.PATH(str(write_path_obj))}\"")
-        error_reporter.add_new_error(ErrorType.OUTPUT_ERROR)
         return False
     return f_handle
 
@@ -73,7 +71,7 @@ def _download_file_to_local(target_url: str,
 def fetch_url_to_local_path(target_url: str,
                             target_local_path_obj: Path,
                             **kwargs) -> bool:
-    file_handle = _get_local_file_handler(target_local_path_obj)
+    file_handle = _get_local_file_write_handler(target_local_path_obj)
     if isinstance(file_handle, bool):
         return file_handle
     dl_success_status = _download_file_to_local(target_url,

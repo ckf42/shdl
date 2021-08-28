@@ -1,6 +1,10 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
+import requests as rq
+from urllib.parse import urlparse, urlunparse, unquote
+from src.CommonUtil import *
+
 if __name__ == '__main__':
     quit()
 
@@ -129,31 +133,22 @@ cliArgParser.add_argument("--verbose", "-v",
 cliArg = vars(cliArgParser.parse_args())
 
 # cliArg handling
-import requests as rq
-from urllib.parse import urlparse, urlunparse, unquote
-from src.CommonUtil import *
-
 cliArg['identifier'] = unquote(cliArg['identifier'])
 
 # read config file if present
-# if cliArg['config'] is None \
-#         and (defPath := Path.home() / '.shdlconfig').is_file():
-#     # get default
-#     verbose_print("Default config file found")
-#     cliArg['config'] = str(defPath)
-# if cliArg['config'] is not None:
 if cliArg['config'] != '':
+    configFileHandle = None
     try:
-        configPath = Path(cliArg['config']).expanduser()
+        configPath = Path(cliArg['config']).expanduser().resolve(strict=True)
         verbose_print("Looking for config file "
-                      f"{PColor.PATH(str(configPath))}")
+                      f"{PColor.PATH(str(configPath))}", 2)
         if not configPath.is_file():
             raise FileNotFoundError
         configFileHandle = configPath.open('rt')
         verbose_print("Config file opened", 2)
         configDict = dict()
         verbose_print("Reading config file "
-                      + PColor.PATH(str(configPath.resolve())))
+                      + PColor.PATH(str(configPath.resolve())), 2)
         for configLine in configFileHandle:
             if '=' not in configLine:
                 continue
@@ -176,11 +171,11 @@ if cliArg['config'] != '':
                 isValidHeader = False
             if isValidHeader:
                 verbose_print(f"Config {lineHeader} found "
-                              f"with key {lineContent}")
+                              f"with key {lineContent}", 2)
         configFileHandle.close()
         verbose_print(f"Overriding {list(configDict.keys())}", 2)
         cliArg.update(configDict)
-    except FileNotFoundError:
+    except (FileNotFoundError, RuntimeError, IsADirectoryError):
         if cliArg['config'] == '~/.shdlconfig':  # is default
             verbose_print(f"{PColor.PATH('~/.shdlconfig')} not found")
         else:
@@ -191,7 +186,8 @@ if cliArg['config'] != '':
         info_print("Cannot read specified config file "
                    f"{PColor.PATH(cliArg['config'])}")
     except ValueError:
-        # TODO check if configFileHandle is closed properly here
+        # force close configFileHandle if possible
+        getattr(configFileHandle, 'close', lambda: None)()
         info_print(PColor.ERROR("ERROR:"), end=" ")
         info_print("Cannot parse config file. "
                    "Will revert to CLI arguments")
@@ -204,14 +200,14 @@ if cliArg['dir'] is None:
 assert isinstance(cliArg['dir'], str)
 cliArg['dir'] = cliArg['dir'].strip(" '\"")
 try:
-    cliArg['dir'] = (Path.cwd() / Path(cliArg['dir']).expanduser()).resolve(
-        True)
+    cliArg['dir'] = (Path.cwd() / Path(cliArg['dir'])
+                     .expanduser()).resolve(strict=True)
     if not cliArg['dir'].is_dir():
         raise NotADirectoryError
 except (NotADirectoryError, FileNotFoundError):
-    error_reporter.quit_now(ErrorType.ARG_INVALID,
-                            error_msg=f"{str(cliArg['dir'])} is not "
-                                      "a valid directory")
+    quit_with_error(ErrorType.ARG_INVALID,
+                    error_msg=f"{str(cliArg['dir'])} is not "
+                              "a valid directory")
 
 # check mirror format
 if cliArg['mirror'] is None:
@@ -242,17 +238,17 @@ try:
            headers={'User-Agent': cliArg['useragent']})
 except rq.exceptions.ProxyError:
     info_print(PColor.ERROR('ERROR:') + " Proxy config is invalid")
-    error_reporter.quit_now(ErrorType.ARG_INVALID)
+    quit_with_error(ErrorType.ARG_INVALID)
 except rq.ConnectionError:
     info_print(PColor.ERROR("ERROR:") + " Failed to connect to the internet")
     if cliArg['proxy'] is not None:
         info_print("Maybe proxy is not setup correctly?")
-    error_reporter.quit_now(ErrorType.NETWORK_ERROR)
+    quit_with_error(ErrorType.NETWORK_ERROR)
 except Exception as e:
     info_print(PColor.ERROR("ERROR:")
                + " Unknown error occurred when testing network connectivity")
     info_print(str(e))
-    error_reporter.quit_now(ErrorType.NETWORK_ERROR)
+    quit_with_error(ErrorType.NETWORK_ERROR)
 else:
     if cliArg['proxy'] is not None:
         verbose_print(f"Using proxy {cliArg['proxy']['https']}")

@@ -80,7 +80,7 @@ class SciDirRepoHandler(DOIRepoHandler):
             # even citation record is incomplete
             return None
 
-    def get_download_url(self, mirror_link):
+    def get_download_url(self, mirror_link, **kwargs):
         assert self.metadata_response is not None
         identifier_override = None
         for line in self.metadata_response.text.splitlines():

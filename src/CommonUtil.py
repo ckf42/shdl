@@ -17,7 +17,6 @@ class PColor(Enum):
 
     def __call__(self, msg: str,
                  color_display: bool = not cliArg['nocolor']) -> str:
-        # def __call__(self, *args, **kwargs):
         if not color_display:
             return msg
         else:
@@ -30,11 +29,9 @@ def info_print(msg: str, *args, print_suppress: bool = cliArg['piping'],
         print(msg, *args, **kwargs)
 
 
-def verbose_print(
-        msg: str,
-        msg_verbose_level: int = 1,
-        config_verbose_level: int = cliArg['verbose']
-) -> None:
+def verbose_print(msg: str,
+                  msg_verbose_level: int = 1,
+                  config_verbose_level: int = cliArg['verbose']) -> None:
     if msg_verbose_level <= config_verbose_level:
         info_print(msg)
 
@@ -68,30 +65,14 @@ class ErrorType(IntEnum):
         }.get(self.value, "UNKNOWN ERROR")
 
 
-class ErrorReporterClass:
-    _error_buffer = list()
-
-    def __init__(self):
-        self._error_buffer = list()
-
-    def add_new_error(self, error_code: ErrorType) -> None:
-        self._error_buffer.append(error_code)
-
-    def quit_now(self,
-                 with_this_code: Optional[ErrorType] = None,
-                 error_msg: Optional[str] = None) -> NoReturn:
-        if with_this_code is not None:
-            self._error_buffer = [with_this_code, ]
-        if ErrorType.SUCCEED in self._error_buffer:
-            quit(0)
-        else:
-            return_error_code = self._error_buffer[0]
-            info_print(PColor.ERROR.__call__("ERROR:")
-                       + " "
-                       + (return_error_code.description()
-                          if error_msg is None
-                          else error_msg))
-            quit(return_error_code)
-
-
-error_reporter = ErrorReporterClass()
+def quit_with_error(with_this_code: Optional[ErrorType] = None,
+                    error_msg: Optional[str] = None) -> NoReturn:
+    if with_this_code == ErrorType.SUCCEED:
+        quit(0)
+    else:
+        info_print(PColor.ERROR.__call__("ERROR:")
+                   + " "
+                   + (with_this_code.description()
+                      if error_msg is None
+                      else error_msg))
+        quit(with_this_code)

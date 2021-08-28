@@ -8,6 +8,7 @@ from src.CommonUtil import *
 from src.StringTransformer import *
 from src.LocalFileHandler import *
 from src.RepoHandler.RegisteredRepo import *
+from src.RepoHandler.DOIRepoHandler import *
 
 if __name__ != '__main__':
     quit()
@@ -20,8 +21,6 @@ repo_obj = next((obj
                  if (obj := cls(cliArg['identifier'])).is_query_valid),
                 None)
 if repo_obj is None:
-    # error_reporter.quit_now(ErrorType.QUERY_INVALID,
-    #                         error_msg="Input query is not recognized")
     info_print(PColor.WARNING("WARNING:"), end=" ")
     info_print("Input query format not recognized. "
                "Assuming it is sanitized DOI")
@@ -32,8 +31,8 @@ verbose_print(f"Sanitized identifier: {repo_obj.identifier}")
 # check metadata
 verbose_print("Metadata response: " + str(repo_obj.metadata), 2)
 if not repo_obj.is_meta_response_valid:
-    error_reporter.quit_now(ErrorType.QUERY_INVALID,
-                            error_msg="No metadata found")
+    quit_with_error(ErrorType.QUERY_INVALID,
+                    error_msg="No metadata found")
 
 # patch autoname
 proposedName = cliArg['output']
@@ -49,33 +48,7 @@ if proposedName is None and cliArg['autoname']:
         assert 'title' in repo_obj.metadata
         assert 'author' in repo_obj.metadata
         info_print(f"Proposed format: {cliArg['autoformat']}")
-        # author_tuple = repo_obj.metadata['author']
-        # author_str = transform_to_author_str(author_tuple)
-        # doc_title = convert_math_symbol_to_name(repo_obj.metadata['title'])
-        # doc_titlecase = transform_to_title(doc_title)
-        # title_kw_dict = {
-        #     'repo':              repo_obj.repo_name.lower(),
-        #     'authors':           author_str,
-        #     'authorEtAl':        (transform_to_author_str(author_tuple[:3])
-        #                           + (', et al.'
-        #                              if len(author_tuple) > 3
-        #                              else '')),
-        #     'authorFamily':      ', '.join(aDict['family']
-        #                                    for aDict in author_tuple),
-        #     'authorFamilyCamel': ''.join(aDict['family'].capitalize()
-        #                                  for aDict in author_tuple),
-        #     'title':             doc_titlecase,
-        #     'title_':            '_'.join(w.capitalize()
-        #                                   for w in re_split('[ ,-]+',
-        #                                                     doc_titlecase)),
-        #     'identifier':        repo_obj.identifier.replace('/', '@'),
-        #     'year':              repo_obj.metadata['year'],
-        #     'year2':             repo_obj.metadata['year'][-2:],
-        # }
-        # verbose_print(str(title_kw_dict), 3)
         try:
-            # proposedName = sanitize_filename(
-            #     cliArg['autoformat'].format_map(title_kw_dict))
             proposedName = autoname_patcher(repo_obj.metadata,
                                             cliArg['autoformat'])
         except ValueError:
@@ -98,7 +71,7 @@ dlURL = next((lnk
               if (lnk := repo_obj.get_download_url(mirrorURL)) is not None),
              None)
 if dlURL is None:
-    error_reporter.quit_now(ErrorType.FILE_NOT_FOUND)
+    quit_with_error(ErrorType.FILE_NOT_FOUND)
 verbose_print("Download link: " + PColor.PATH(dlURL), 2)
 
 # download
@@ -107,6 +80,6 @@ if proposedName is None:
 downloadPath = cliArg['dir'] / (proposedName + '.' + dlURL.rsplit('.', 1)[-1])
 verbose_print("Download path: " + PColor.PATH(str(downloadPath)), 2)
 if not fetch_url_to_local_path(dlURL, downloadPath):
-    error_reporter.quit_now(ErrorType.OUTPUT_ERROR,
-                            error_msg="Cannot write to "
-                                      + PColor.PATH(str(downloadPath)))
+    quit_with_error(ErrorType.OUTPUT_ERROR,
+                    error_msg="Cannot write to "
+                              + PColor.PATH(str(downloadPath)))
