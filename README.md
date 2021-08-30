@@ -21,10 +21,10 @@ To use the script, you will need:
     * alternatively install `requests` with socks extra via `pip install --user requests[socks]`
 
 You can simply clone this repo and install Python along with all the dependency packages
-with `pip install -r requirements.txt`. The script would then be ready for use.
+with `pip install -r requirements.txt`. The script would then be ready to use.
 
 [Standalone executable](https://github.com/ckf42/shdl/releases) is (currently) only available for Windows x64 and is
-considered experimental. Use at your own risk.
+considered experimental. *Use at your own risk*.
 
 ## Usage
 
@@ -46,7 +46,7 @@ Relative path support
 
 `shdl 10.1109/5.771073 --dir ~/documents`
 
-### Different DOI queries
+### Different DOI query formats
 
 `shdl https://doi.org/10.1109/5.771073`
 
@@ -127,7 +127,7 @@ Note that the file extension is always untouched.
 
 ### JSTOR supprt
 
-Experimental
+*Experimental*
 
 `shdl "jstor: 26494158"`
 
@@ -135,7 +135,7 @@ Experimental
 
 ### ScienceDirect support
 
-Experimental
+*Experimental*
 
 `shdl "scidir: S0273117721000740"`
 
@@ -188,9 +188,9 @@ Note that argument for `--dir` is `"~/document directory to save file"`
 
 ## Dependencies
 
-* Python 3 (tested on 3.8, 3.9)
-* [requests](https://pypi.org/project/requests/ "PyPI page") (tested on 2.26.0)
-* [PySocks](https://pypi.org/project/PySocks/ "PyPI page") (tested on 1.7.1)
+* Python 3 (support 3.8, 3.9)
+* [requests](https://pypi.org/project/requests/ "PyPI page") (support 2.26.0)
+* [PySocks](https://pypi.org/project/PySocks/ "PyPI page") (support 1.7.1)
 
 ## TODO
 
