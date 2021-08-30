@@ -19,7 +19,7 @@ cliArgParser = ArgumentParser(
 )
 cliArgParser.add_argument("--version", "-V",
                           action='version',
-                          version="%(prog)s v0.7.1")
+                          version="%(prog)s v0.7.2")
 cliArgParser.add_argument("identifier",
                           type=str,
                           help="The identifier of the document. "
