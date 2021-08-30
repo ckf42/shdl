@@ -118,7 +118,7 @@ cliArgParser.add_argument("--config",
                                "from file (instead of the CLI argument) "
                                "if they are present: "
                                "proxy, mirror, dir, chunk, useragent, "
-                               "autoname, autoformat. "
+                               "autoname, autoformat, nocolor. "
                                "Pass an empty string to disable this. "
                                "Default: "
                                "~/.shdlconfig")
@@ -144,16 +144,15 @@ cliArg['identifier'] = unquote(cliArg['identifier'])
 # if cliArg['config'] is not None:
 if cliArg['config'] != '':
     try:
+        # do not use color print as config may contain --nocolor switch
         configPath = Path(cliArg['config']).expanduser()
-        verbose_print("Looking for config file "
-                      f"{PColor.PATH(str(configPath))}")
+        verbose_print("Looking for config file " + str(configPath))
         if not configPath.is_file():
             raise FileNotFoundError
         configFileHandle = configPath.open('rt')
         verbose_print("Config file opened", 2)
         configDict = dict()
-        verbose_print("Reading config file "
-                      + PColor.PATH(str(configPath.resolve())))
+        verbose_print("Reading config file " + str(configPath.resolve()))
         for configLine in configFileHandle:
             if '=' not in configLine:
                 continue
@@ -170,8 +169,8 @@ if cliArg['config'] != '':
                     configDict['mirror'].append(lineContent)
             elif lineHeader == 'chunk':
                 configDict['chunk'] = int(lineContent)
-            elif lineHeader == 'autoname':
-                configDict['autoname'] = lineContent = True
+            elif lineHeader in ('autoname', 'nocolor'):
+                configDict[lineHeader] = lineContent = True
             else:
                 isValidHeader = False
             if isValidHeader:

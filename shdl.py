@@ -48,7 +48,7 @@ if proposedName is None and cliArg['autoname']:
         assert isinstance(repo_obj.metadata, dict)
         assert 'title' in repo_obj.metadata
         assert 'author' in repo_obj.metadata
-        info_print(f"Proposed format: {cliArg['autoformat']}")
+        verbose_print(f"Proposed format: {cliArg['autoformat']}", 1)
         # author_tuple = repo_obj.metadata['author']
         # author_str = transform_to_author_str(author_tuple)
         # doc_title = convert_math_symbol_to_name(repo_obj.metadata['title'])
