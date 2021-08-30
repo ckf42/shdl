@@ -133,8 +133,18 @@ def autoname_patcher(metadata_dict: dict,
                for k in ('family', 'given'))
     author_tuple = metadata_dict['author']
     author_str = transform_to_author_str(author_tuple)
+    author_cutoff = transform_to_author_str((author_tuple[0],))
+    for aDict in author_tuple[1:]:
+        author_cutoff_proposed = author_cutoff + ', ' \
+                                 + transform_to_author_str((aDict,))
+        if len(author_cutoff_proposed) > 80:
+            author_cutoff += ', et al.'
+            break
+        author_cutoff = author_cutoff_proposed
     doc_titlecase = transform_to_title(
         convert_math_symbol_to_name(metadata_dict['title']))
+    title_capitalized = tuple(w.capitalize()
+                              for w in split(r'[ ,\-]+', doc_titlecase))
     title_kw_dict = {
         'repo':              metadata_dict['repo'].lower(),
         'authors':           author_str,
@@ -142,17 +152,14 @@ def autoname_patcher(metadata_dict: dict,
                               + (', et al.'
                                  if len(author_tuple) > 3
                                  else '')),
+        'authors80':         author_cutoff,
         'authorFamily':      ', '.join(aDict['family']
                                        for aDict in author_tuple),
         'authorFamilyCamel': ''.join(aDict['family'].capitalize()
                                      for aDict in author_tuple),
         'title':             doc_titlecase,
-        'title_':            '_'.join(w.capitalize()
-                                      for w in split(r'[ ,\-]+',
-                                                     doc_titlecase)),
-        'titleCamel':        ''.join(w.capitalize()
-                                     for w in split(r'[ ,\-]+',
-                                                    doc_titlecase)),
+        'title_':            '_'.join(title_capitalized),
+        'titleCamel':        ''.join(title_capitalized),
         'identifier':        metadata_dict['id'].replace('/', '@'),
         'year':              metadata_dict['year'],
         'year2':             metadata_dict['year'][-2:],

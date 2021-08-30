@@ -89,7 +89,7 @@ cliArgParser.add_argument('--autoformat',
                                "In Python str.format syntax. "
                                "Format containing space must be quoted. "
                                "Available keywords: "
-                               "authors, authorEtAl, authorFamily, "
+                               "authors, authorEtAl, authorFamily, authors80, "
                                "authorFamilyCamel, identifier, repo, title, "
                                "title_, year, year2. "
                                "For details, refer to the repo README. "

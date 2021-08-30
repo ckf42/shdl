@@ -94,6 +94,8 @@ arguments. Available keywords are:
 
 * `authors`: a string of comma separated names with given names abbreviated (
   e.g. `M. V. Berry, N. Brunner, S. Popescu, P. Shukla`)
+* `authors80`: same as `authors`, but when cut off when the string is more than 80 characters. `et al` is added if there
+  are names omitted
 * `authorEtAl`: same as `authors`, but with only the first 3 names. Remaining names will be replaced with `et al.` (
   e.g. `M. V. Berry, N. Brunner, S. Popescu, et al.`)
 * `authorFamily`: same as `authors`, but with family names only (e.g. `Berry, Brunner, Popescu, Shukla`)
@@ -140,6 +142,14 @@ Note that the file extension is always untouched.
 `shdl "scidir: S0273117721000740"`
 
 `shdl https://www.sciencedirect.com/science/article/pii/S0273117721000740`
+
+### IEEE support
+
+*Experimental*
+
+`shdl "ieee: 1710233"`
+
+`shdl https://ieeexplore.ieee.org/document/1710233`
 
 If the target document has a DOI, `shdl` will always use it for file fetching.
 

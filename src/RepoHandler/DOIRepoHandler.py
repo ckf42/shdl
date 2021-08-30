@@ -25,7 +25,7 @@ class DOIRepoHandler(_BaseRepoHandler):
     repo_name = "DOI"
     query_extract_pattern \
         = (r'^(https?://)?((www\.|dx\.)?doi(\.org)?|'
-           r'(link\.)?springer(\.com/(article|referenceworkentry))?)'
+           r'(link\.)?springer(\.com/(\w+))?)'
            r'(:|/)?\s*(.+)$')
     mirror_list = cliArg['mirror']
 
