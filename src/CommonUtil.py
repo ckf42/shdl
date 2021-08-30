@@ -23,24 +23,50 @@ class PColor(Enum):
             return f"{self.value}{msg}\033[0m"
 
 
-def info_print(msg: str, *args, print_suppress: bool = cliArg['piping'],
-               **kwargs) -> None:
+@unique
+class VerboseLevel(IntEnum):
+    PRINT = 0
+    INFO = 1
+    VERBOSE = 2
+    DEBUG = 3
+    DETAIL = 4
+
+    def _missing_(value, **kwargs):
+        if value < (minVal := min(VerboseLevel.__members__.values())):
+            return VerboseLevel(minVal)
+        else:
+            return VerboseLevel(max(VerboseLevel.__members__.values()))
+
+
+def _base_print(msg: str,
+                *args,
+                print_suppress: bool = cliArg['piping'],
+                **kwargs) -> None:
+    # lower level print function
     if not print_suppress:
         print(msg, *args, **kwargs)
 
 
-def verbose_print(msg: str,
-                  msg_verbose_level: int = 1,
-                  config_verbose_level: int = cliArg['verbose']) -> None:
+def console_print(
+        msg: str,
+        *args,
+        msg_verbose_level: VerboseLevel = VerboseLevel.INFO,
+        config_verbose_level: VerboseLevel = VerboseLevel(cliArg['verbose']),
+        **kwargs) -> None:
     if msg_verbose_level <= config_verbose_level:
-        info_print(msg)
+        _base_print(msg, *args, **kwargs)
+
+
+def info_print(msg: str, *args, **kwargs):
+    console_print(msg, msg_verbose_level=VerboseLevel.INFO, *args, **kwargs)
 
 
 def human_byte_unit_string(size_byte: int) -> str:
-    if size_byte >= 1024 ** 2:
-        return f"{size_byte / (1024 ** 2) :.2f} MB"
-    elif size_byte >= 1024:
-        return f"{size_byte / 1024 :.2f} KB"
+    # assuming less than 1 GB
+    if (val := size_byte / 1024 ** 2) >= 1:
+        return f"{val :.2f} MB"
+    elif (val := size_byte / 1024) >= 1:
+        return f"{val :.2f} KB"
     else:
         return f"{size_byte} B"
 
@@ -65,7 +91,7 @@ class ErrorType(IntEnum):
         }.get(self.value, "UNKNOWN ERROR")
 
 
-def quit_with_error(with_this_code: Optional[ErrorType] = None,
+def quit_with_error(with_this_code: ErrorType = ErrorType.SUCCEED,
                     error_msg: Optional[str] = None) -> NoReturn:
     if with_this_code == ErrorType.SUCCEED:
         quit(0)

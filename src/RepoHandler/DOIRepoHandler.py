@@ -53,7 +53,7 @@ class DOIRepoHandler(_BaseRepoHandler):
         if match_gp:
             return match_gp.group(9)
         else:
-            verbose_print(f"Failed parsing identifier as type {cls.repo_name}")
+            info_print(f"Failed parsing identifier as type {cls.repo_name}")
             return None
 
     @classmethod
@@ -63,7 +63,7 @@ class DOIRepoHandler(_BaseRepoHandler):
                == 'application/vnd.citationstyles.csl+json'
 
     def get_metadata_response(self):
-        verbose_print(f"Fetching metadata for type {self.repo_name}...")
+        info_print(f"Fetching metadata for type {self.repo_name}...")
         return rq.get(
             'https://doi.org/{id}'.format(id=self.identifier),
             headers={"Accept": "application/vnd.citationstyles.csl+json"}
@@ -71,7 +71,7 @@ class DOIRepoHandler(_BaseRepoHandler):
 
     def extract_metadata(self):
         if not self._is_meta_query_response_valid(self.metadata_response):
-            verbose_print(f"Response is not a valid {self.repo_name} response")
+            info_print(f"Response is not a valid {self.repo_name} response")
             return False
         meta_json_dict = self.metadata_response.json()
         if all(k in meta_json_dict for k in ('author', 'title')) \
@@ -126,9 +126,10 @@ class DOIRepoHandler(_BaseRepoHandler):
         # test mirror
         if identifier_override is None:
             identifier_override = self.identifier
-        verbose_print("Checking if mirror "
+        console_print("Checking if mirror "
                       + PColor.PATH(mirror_link)
-                      + " is online ...")
+                      + " is online ...",
+                      msg_verbose_level=VerboseLevel.VERBOSE)
         try:
             if rq.get(mirror_link, **cliArg['rqKwargs']).status_code != 200:
                 raise rq.exceptions.ConnectionError
@@ -146,7 +147,8 @@ class DOIRepoHandler(_BaseRepoHandler):
 
         # query mirror
         query_url = urljoin(mirror_link, identifier_override)
-        verbose_print("Querying " + PColor.PATH(query_url) + " ...")
+        console_print("Querying " + PColor.PATH(query_url) + " ...",
+                      msg_verbose_level=VerboseLevel.VERBOSE)
         preview_resp = rq.get(query_url, **cliArg['rqKwargs'])
         if (not preview_resp.headers['Content-Type'].startswith('text/html')) \
                 or len(preview_resp.text.strip('\n ')) == 0:
@@ -155,19 +157,22 @@ class DOIRepoHandler(_BaseRepoHandler):
             return None
 
         # parse response
-        verbose_print("Finding download link ...")
+        console_print("Finding download link ...",
+                      msg_verbose_level=VerboseLevel.DEBUG)
         possible_link = list()
         for line in preview_resp.text.splitlines():
             line = unescape(line).strip()
             if (match_obj := self
                     .link_extractor.search(line, IGNORECASE)) is not None:
-                verbose_print(f"Line with possible link: {line}", 2)
+                console_print(f"Line with possible link: {line}",
+                              msg_verbose_level=VerboseLevel.DETAIL)
                 dl_url = urlunparse(
                     urlparse(match_obj.group(1)
                              .rsplit('#', 1)[0]  # rm fragment
                              .replace(r'\/', '/'),  # unescape \/
                              scheme='https'))  # force scheme if missing
-                verbose_print("Link found: " + PColor.PATH(dl_url))
+                console_print("Link found: " + PColor.PATH(dl_url),
+                              msg_verbose_level=VerboseLevel.VERBOSE)
                 possible_link.append(dl_url)
         if len(possible_link) == 0:
             info_print(PColor.ERROR("ERROR:"), end=" ")
@@ -193,7 +198,8 @@ class DOIRepoHandler(_BaseRepoHandler):
         """
         query_url = 'https://www.jstor.org/citation/ris/{id}'.format(
             id=self.identifier)
-        verbose_print(f"Fetching from {PColor.PATH(query_url)}")
+        console_print(f"Fetching from {PColor.PATH(query_url)}",
+                      msg_verbose_level=VerboseLevel.INFO)
         jstor_resp = rq.get(query_url, **cliArg['rqKwargs'])
         self.metadata_response = jstor_resp
         if jstor_resp.status_code == 200 \
@@ -239,7 +245,7 @@ class DOIRepoHandler(_BaseRepoHandler):
         """
         query_url = 'https://www.aimsciences.org/article/doi/{id}'.format(
             id=self.identifier)
-        verbose_print(f"Fetching from {PColor.PATH(query_url)}")
+        info_print(f"Fetching from {PColor.PATH(query_url)}")
         aims_resp = rq.get(query_url, headers=cliArg['rqKwargs']['headers'])
         # TODO check valid
         aims_internal_id = None
@@ -251,7 +257,8 @@ class DOIRepoHandler(_BaseRepoHandler):
             info_print(PColor.ERROR("ERROR:"), end=" ")
             info_print("Failed to parse AIMS response")
             return False
-        verbose_print(f"AIMS ID: {aims_internal_id}")
+        console_print(f"AIMS ID: {aims_internal_id}",
+                      msg_verbose_level=VerboseLevel.VERBOSE)
         xml_resp = rq.get(
             'https://www.aimsciences.org/article/'
             'exportXML?ids={id}&downType=XML'.format(
@@ -289,7 +296,8 @@ class DOIRepoHandler(_BaseRepoHandler):
         """
         query_url = 'https://royalsocietypublishing.org/doi/{id}'.format(
             id=self.identifier)
-        verbose_print(f"Fetching from {PColor.PATH(query_url)}")
+        console_print(f"Fetching from {PColor.PATH(query_url)}",
+                      msg_verbose_level=VerboseLevel.INFO)
         royal_resp = rq.get(query_url, headers=cliArg['rqKwargs']['headers'])
         # PaRsInG HtMl wItH rEgEx !!!1!11!!!
         # TODO need better method
@@ -335,7 +343,8 @@ class DOIRepoHandler(_BaseRepoHandler):
         # get doc host
         self_host = urlparse(rq.get('https://doi.org/{id}'
                                     .format(id=self.identifier)).url).netloc
-        verbose_print(f"Document host: {self_host}")
+        console_print(f"Document host: {self_host}",
+                      msg_verbose_level=VerboseLevel.VERBOSE)
         metadata_getter_func = {
             'www.jstor.org':       self.alt_extract_metadata_jstor,
             'www.aimsciences.org': self.alt_extract_metadata_aims,

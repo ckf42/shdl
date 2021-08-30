@@ -25,11 +25,11 @@ class SciDirRepoHandler(DOIRepoHandler):
         if match_gp:
             return match_gp.group(6)
         else:
-            verbose_print(f"Failed parsing identifier as type {cls.repo_name}")
+            info_print(f"Failed parsing identifier as type {cls.repo_name}")
             return None
 
     def get_metadata_response(self):
-        verbose_print(f"Fetching metadata for type {self.repo_name}...")
+        info_print(f"Fetching metadata for type {self.repo_name}...")
         splitted_id = self.identifier.split('/', 1)
         if len(splitted_id) == 1:
             info_print(PColor.WARNING("WARNING:"), end=" ")
@@ -38,7 +38,8 @@ class SciDirRepoHandler(DOIRepoHandler):
             self.doc_type, self.identifier = 'pii', self.identifier
         else:
             self.doc_type, self.identifier = splitted_id
-        verbose_print(f"Discovered identifier type: {self.doc_type}")
+        console_print(f"Discovered identifier type: {self.doc_type}",
+                      msg_verbose_level=VerboseLevel.VERBOSE)
         return rq.get(
             'https://www.sciencedirect.com/sdfe/arp/cite?'
             '{type}={id}'
@@ -56,7 +57,8 @@ class SciDirRepoHandler(DOIRepoHandler):
 
     def extract_metadata(self):
         if not self._is_meta_query_response_valid(self.metadata_response):
-            verbose_print(f"Response is not a valid {self.repo_name} response")
+            console_print(f"Response is not a valid {self.repo_name} response",
+                          msg_verbose_level=VerboseLevel.INFO)
             return False
         doc_title = None
         author_list = list()
@@ -88,8 +90,8 @@ class SciDirRepoHandler(DOIRepoHandler):
                 # doc has DOI
                 self.identifier = re_match(r'^DO  - .+?doi.+?/(.+)$',
                                            line).group(1)
-                verbose_print(f"Document has DOI {self.identifier}. "
-                              "Will use this for querying mirror")
+                info_print(f"Document has DOI {self.identifier}. "
+                           "Will use this for querying mirror")
                 identifier_override = self.identifier
                 break
             elif identifier_override is not None and line.startswith('UR  - '):
@@ -102,7 +104,8 @@ class SciDirRepoHandler(DOIRepoHandler):
                     + f'{self.doc_type}/'
                     + self.identifier)
 
-        verbose_print("Calling JSTOR super get_download_url", 3)
+        console_print("Calling JSTOR super get_download_url",
+                      msg_verbose_level=VerboseLevel.DEBUG)
         return super(SciDirRepoHandler, self).get_download_url(
             mirror_link,
             # hacky

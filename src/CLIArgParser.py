@@ -3,7 +3,6 @@ from pathlib import Path
 
 import requests as rq
 from urllib.parse import urlparse, urlunparse, unquote
-from src.CommonUtil import *
 
 if __name__ == '__main__':
     quit()
@@ -42,9 +41,7 @@ cliArgParser.add_argument("--mirror", '-m',
                           action='append',
                           help="Domain of file mirror to use. "
                                "Can specify multiple times to try "
-                               "different mirrors. "
-                               "Default: "
-                               "https://sci-hub.se/")
+                               "different mirrors. ")
 cliArgParser.add_argument("--output", "-o",
                           type=str,
                           help="Save file with this name stem. "
@@ -132,6 +129,8 @@ cliArgParser.add_argument("--verbose", "-v",
                           help="Display verbose information")
 cliArg = vars(cliArgParser.parse_args())
 
+from src.CommonUtil import *
+
 # cliArg handling
 cliArg['identifier'] = unquote(cliArg['identifier'])
 
@@ -141,13 +140,16 @@ if cliArg['config'] != '':
     try:
         # do not use color print as config may contain --nocolor switch
         configPath = Path(cliArg['config']).expanduser().resolve(strict=True)
-        verbose_print("Looking for config file " + str(configPath), 2)
+        console_print("Looking for config file " + str(configPath),
+                      msg_verbose_level=VerboseLevel.DEBUG)
         if not configPath.is_file():
             raise FileNotFoundError
         configFileHandle = configPath.open('rt')
-        verbose_print("Config file opened", 2)
+        console_print("Config file opened",
+                      msg_verbose_level=VerboseLevel.DEBUG)
         configDict = dict()
-        verbose_print("Reading config file " + str(configPath.resolve()), 2)
+        console_print("Reading config file " + str(configPath.resolve()),
+                      msg_verbose_level=VerboseLevel.DEBUG)
         for configLine in configFileHandle:
             if '=' not in configLine:
                 continue
@@ -169,14 +171,16 @@ if cliArg['config'] != '':
             else:
                 isValidHeader = False
             if isValidHeader:
-                verbose_print(f"Config {lineHeader} found "
-                              f"with key {lineContent}", 2)
+                console_print(f"Config {lineHeader} found "
+                              f"with key {lineContent}",
+                              msg_verbose_level=VerboseLevel.DEBUG)
         configFileHandle.close()
-        verbose_print(f"Overriding {list(configDict.keys())}", 2)
+        console_print(f"Overriding {list(configDict.keys())}",
+                      msg_verbose_level=VerboseLevel.DEBUG)
         cliArg.update(configDict)
     except (FileNotFoundError, RuntimeError, IsADirectoryError):
         if cliArg['config'] == '~/.shdlconfig':  # is default
-            verbose_print(f"{PColor.PATH('~/.shdlconfig')} not found")
+            info_print(f"{PColor.PATH('~/.shdlconfig')} not found")
         else:
             info_print("Config file not found "
                        f"at {PColor.PATH(cliArg['config'])}.")
@@ -191,7 +195,8 @@ if cliArg['config'] != '':
         info_print("Cannot parse config file. "
                    "Will revert to CLI arguments")
 else:
-    verbose_print("No config file", 2)
+    console_print("No config file",
+                  msg_verbose_level=VerboseLevel.VERBOSE)
 
 # check if dir is valid
 if cliArg['dir'] is None:
@@ -210,10 +215,10 @@ except (NotADirectoryError, FileNotFoundError):
 
 # check mirror format
 if cliArg['mirror'] is None:
-    # info_print(PColor.ERROR("Error:"), end=" ")
-    # info_print("No mirror provided")
-    # error_reporter.quit_now(ErrorType.ARG_INVALID)
-    cliArg['mirror'] = ("https://sci-hub.se/",)
+    quit_with_error(ErrorType.ARG_INVALID,
+                    error_msg="No mirror provided. "
+                              "Please specify at least a mirror "
+                              "in commandline argument or in shdlconfig file")
 else:
     cliArg['mirror'] = tuple(
         # enforce https if not specified
@@ -229,28 +234,29 @@ if cliArg['proxy'] is None:
     info_print(PColor.WARNING("WARNING:"), end=" ")
     info_print("No proxy configured")
 
-verbose_print("Testing network connectivity ...")
+info_print("Testing network connectivity ...")
 try:
     pass
     rq.get('https://example.com',
            proxies=cliArg['proxy'],
            headers={'User-Agent': cliArg['useragent']})
 except rq.exceptions.ProxyError:
-    info_print(PColor.ERROR('ERROR:') + " Proxy config is invalid")
-    quit_with_error(ErrorType.ARG_INVALID)
+    quit_with_error(ErrorType.ARG_INVALID,
+                    error_msg="Proxy config is invalid")
 except rq.ConnectionError:
-    info_print(PColor.ERROR("ERROR:") + " Failed to connect to the internet")
-    if cliArg['proxy'] is not None:
-        info_print("Maybe proxy is not setup correctly?")
-    quit_with_error(ErrorType.NETWORK_ERROR)
+    quit_with_error(ErrorType.NETWORK_ERROR,
+                    error_msg="Failed to connect to the internet. "
+                              + ("Maybe proxy is not setup correctly?"
+                                 if cliArg['proxy'] is not None
+                                 else ""))
 except Exception as e:
-    info_print(PColor.ERROR("ERROR:")
-               + " Unknown error occurred when testing network connectivity")
-    info_print(str(e))
-    quit_with_error(ErrorType.NETWORK_ERROR)
+    quit_with_error(ErrorType.NETWORK_ERROR,
+                    error_msg=("Unknown error occurred "
+                               "when testing network connectivity. \n"
+                               + str(e)))
 else:
     if cliArg['proxy'] is not None:
-        verbose_print(f"Using proxy {cliArg['proxy']['https']}")
+        info_print(f"Using proxy {cliArg['proxy']['https']}")
 cliArg['rqKwargs'] = {
     'proxies': cliArg['proxy'],
     'headers': {'User-Agent': cliArg['useragent'], }

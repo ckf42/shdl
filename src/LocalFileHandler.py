@@ -18,8 +18,9 @@ def _get_local_file_write_handler(
         info_print("Target download path is too long")
         return False
     if cliArg['dryrun']:
+        info_print("Dryrun. Skipping getting local file handle")
         return True
-    verbose_print(f"Downloading to {PColor.PATH(str(write_path_obj))}")
+    info_print(f"Downloading to {PColor.PATH(str(write_path_obj))}")
     try:
         f_handle = write_path_obj.open('wb')
     except (PermissionError, FileNotFoundError):
@@ -37,11 +38,12 @@ def _download_file_to_local(target_url: str,
     if cliArg['dryrun']:
         # just to be safe
         assert local_file_handle.closed
+        info_print("Dryrun. Skipping download")
         return True
     downloaded_size = 0
     last_line_len = 0
     dl_msg = None
-    verbose_print(f"Downloading from {PColor.PATH(target_url)} ...")
+    info_print(f"Downloading from {PColor.PATH(target_url)} ...")
     with rq.get(target_url, stream=True, **kwargs) as dl_res:
         file_size = dl_res.headers.get('Content-Length', None)
         if file_size is None:

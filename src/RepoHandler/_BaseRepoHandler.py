@@ -19,16 +19,19 @@ class _BaseRepoHandler(ABC):
 
     # init
     def __init__(self, raw_query_str: Optional[str] = None):
-        verbose_print("Initiating _Base", 3)
+        console_print("Initiating _Base",
+                      msg_verbose_level=VerboseLevel.DETAIL)
         if raw_query_str is None:
             return
         self.identifier = self.get_identifier(raw_query_str)
         self.is_query_valid = (self.identifier is not None)
         if not self.is_query_valid:
             return
-        verbose_print("Fetching metadata response", 3)
+        console_print("Fetching metadata response",
+                      msg_verbose_level=VerboseLevel.DEBUG)
         self.metadata_response = self.get_metadata_response()
-        verbose_print("Extracting metadata", 3)
+        console_print("Extracting metadata",
+                      msg_verbose_level=VerboseLevel.DEBUG)
         self.metadata = self.extract_metadata()
         self.is_meta_response_valid = self.metadata is not False
         if self.is_meta_response_valid:

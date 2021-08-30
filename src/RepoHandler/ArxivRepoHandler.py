@@ -25,7 +25,7 @@ class ArxivRepoHandler(_BaseRepoHandler):
         if match_gp:
             return match_gp.group(4)
         else:
-            verbose_print(f"Failed parsing identifier as type {cls.repo_name}")
+            info_print(f"Failed parsing identifier as type {cls.repo_name}")
             return None
 
     @classmethod
@@ -34,7 +34,7 @@ class ArxivRepoHandler(_BaseRepoHandler):
                and 'http://arxiv.org/api/errors' not in response_obj.text
 
     def get_metadata_response(self):
-        verbose_print(f"Fetching metadata for type {self.repo_name}...")
+        info_print(f"Fetching metadata for type {self.repo_name}...")
         return rq.get(
             'http://export.arxiv.org/api/query?id_list={id}'.format(
                 id=self.identifier
@@ -43,7 +43,7 @@ class ArxivRepoHandler(_BaseRepoHandler):
 
     def extract_metadata(self):
         if not self._is_meta_query_response_valid(self.metadata_response):
-            verbose_print(f"Response is not a valid {self.repo_name} response")
+            info_print(f"Response is not a valid {self.repo_name} response")
             return False
         atom_str = '{http://www.w3.org/2005/Atom}'
         entry_root = eTree.fromstring(self.metadata_response.text) \

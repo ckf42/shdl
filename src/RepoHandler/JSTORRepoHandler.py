@@ -25,7 +25,7 @@ class JSTORRepoHandler(DOIRepoHandler):
         if match_gp:
             return match_gp.group(4)
         else:
-            verbose_print(f"Failed parsing identifier as type {cls.repo_name}")
+            info_print(f"Failed parsing identifier as type {cls.repo_name}")
             return None
 
     @classmethod
@@ -52,7 +52,8 @@ class JSTORRepoHandler(DOIRepoHandler):
             identifier_override = mirror_link \
                                   + 'https://www.jstor.org/stable/' \
                                   + self.identifier
-        verbose_print("Calling JSTOR super get_download_url", 3)
+        console_print("Calling JSTOR super get_download_url",
+                      msg_verbose_level=VerboseLevel.DEBUG)
         return super(JSTORRepoHandler, self).get_download_url(
             mirror_link,
             # hacky

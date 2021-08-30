@@ -157,6 +157,8 @@ def autoname_patcher(metadata_dict: dict,
         'year':              metadata_dict['year'],
         'year2':             metadata_dict['year'][-2:],
     }
-    verbose_print("Available autoname variables (not sanitized):", 3)
-    verbose_print(str(title_kw_dict), 3)
+    console_print("Available autoname variables (not sanitized):",
+                  msg_verbose_level=VerboseLevel.DEBUG)
+    console_print(str(title_kw_dict),
+                  msg_verbose_level=VerboseLevel.DEBUG)
     return sanitize_filename(inputted_format_str.format_map(title_kw_dict))
