@@ -143,6 +143,8 @@ Note that the file extension is always untouched.
 
 `shdl https://www.sciencedirect.com/science/article/pii/S0273117721000740`
 
+If the target document has a DOI, `shdl` will always use it for file fetching.
+
 ### IEEE support
 
 *Experimental*
