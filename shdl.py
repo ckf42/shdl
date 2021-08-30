@@ -93,6 +93,13 @@ if proposedName is None and cliArg['autoname']:
             verbose_print("Proposed name: " + PColor.PATH(proposedName), 2)
 
 # get download link
+if len(repo_obj.mirror_list) == 0:
+    error_reporter.quit_now(
+        ErrorType.ARG_INVALID,
+        error_msg="No known mirror. "
+                  "Please specify mirrors with --mirror switch"
+    )
+assert len(repo_obj.mirror_list) != 0
 dlURL = next((lnk
               for mirrorURL in repo_obj.mirror_list
               if (lnk := repo_obj.get_download_url(mirrorURL)) is not None),
