@@ -21,10 +21,10 @@ To use the script, you will need:
     * alternatively install `requests` with socks extra via `pip install --user requests[socks]`
 
 You can simply clone this repo and install Python along with all the dependency packages
-with `pip install -r requirements.txt`. The script would then be ready for use.
+with `pip install -r requirements.txt`. The script would then be ready to use.
 
 [Standalone executable](https://github.com/ckf42/shdl/releases) is (currently) only available for Windows x64 and is
-considered experimental. Use at your own risk.
+considered experimental. *Use at your own risk*.
 
 ## Usage
 
@@ -46,7 +46,7 @@ Relative path support
 
 `shdl 10.1109/5.771073 --dir ~/documents`
 
-### Different DOI queries
+### Different DOI query formats
 
 `shdl https://doi.org/10.1109/5.771073`
 
@@ -127,7 +127,7 @@ Note that the file extension is always untouched.
 
 ### JSTOR supprt
 
-Experimental
+*Experimental*
 
 `shdl "jstor: 26494158"`
 
@@ -135,7 +135,7 @@ Experimental
 
 ### ScienceDirect support
 
-Experimental
+*Experimental*
 
 `shdl "scidir: S0273117721000740"`
 
@@ -153,11 +153,11 @@ the path to this file with `--config`.
 If this file exists (and can be read), it will be parsed line by line as follows:
 
 * Lines that start with one of these keywords (`proxy`, `mirror`, `dir`, `chunk`, `useragent`, `autoname`
-  , `autoformat`, case-insensitive) followed by an equal sign `=` are parsed
+  , `autoformat`, `nocolor`, case-insensitive) followed by an equal sign `=` are parsed
     * The remaining portion of the line is taken as parameter.
     * If these keywords `proxy`, `dir`, `useragent`, `chunk`, `autoformat` are specified more than once, only the last
       one is used.
-    * If the keyword is `autoname`, `--autoname` will be set (as `True`), ignoring the parameter.
+    * If the keyword is `autoname`, `--autoname` will be set (as `True`), ignoring the parameter. Similar for `nocolor`
     * `mirror` can be specified multiple times for multiple mirrors.
 * All other lines are ignored.
 
@@ -177,22 +177,23 @@ this line will be ignored
 this=line=will=also=be=ignored
 mirror=first.mirror
 dir=./this_will_not_be_used
+nocolor=this message will be ignored
 dir=~/document directory to save file
 mirror=second.mirror
 autoname=these words will be ignored
 ```
 
 is the same as
-specifying `--proxy socks5h://127.0.0.1:9050 --mirror first.mirror --dir "~/document directory to save file" --mirror second.mirror --autoname`
+specifying `--proxy socks5h://127.0.0.1:9050 --mirror first.mirror --nocolor --dir "~/document directory to save file" --mirror second.mirror --autoname`
 when calling `shdl`
 
 Note that argument for `--dir` is `"~/document directory to save file"`
 
 ## Dependencies
 
-* Python 3 (tested on 3.8, 3.9)
-* [requests](https://pypi.org/project/requests/ "PyPI page") (tested on 2.26.0)
-* [PySocks](https://pypi.org/project/PySocks/ "PyPI page") (tested on 1.7.1)
+* Python 3 (support 3.8, 3.9)
+* [requests](https://pypi.org/project/requests/ "PyPI page") (support 2.26.0)
+* [PySocks](https://pypi.org/project/PySocks/ "PyPI page") (support 1.7.1)
 
 ## TODO
 
