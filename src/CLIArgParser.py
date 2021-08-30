@@ -8,14 +8,13 @@ if __name__ == '__main__':
     quit()
 
 cliArgParser = ArgumentParser(
-    description="A simple script for downloading files from Sci-Hub",
+    description="A simple script for downloading files by their identifiers",
     epilog="This script works by parsing the response "
            "sent back from the server. "
-           "Since different Sci-Hub mirrors may have different interfaces, "
-           "and their layouts may change in the future, "
-           "there is NO GUARANTEE that this script works on every mirror, "
-           "or will continue to work on currently working mirrors "
-           "in the future. "
+           "Since different mirrors may have different response format, "
+           "this script may not be able to parse the responses, and so "
+           "there is no GUARANTEE that this script is suitable for your use. "
+           "Use at your own risk. "
 )
 cliArgParser.add_argument("--version", "-V",
                           action='version',
