@@ -157,10 +157,11 @@ If the target document has a DOI, `shdl` will always use it for file fetching.
 
 ## Config file
 
-You can store your configurations for `shdl` in a UTF-8 encoded text file.
+You can store your default configurations for `shdl` in a UTF-8 encoded text file.
 
 By default, `shdl` will look for `.shdlconfig` at home directory `~` (Windows: `%USERPROFILE%`). You can also specify
-the path to this file with `--config`.
+the path to this file with `--config`. To stop looking for `.shdlconfig` file, or simply put an empty string in the
+commandline option (`--config ""`)
 
 If this file exists (and can be read), it will be parsed line by line as follows:
 
@@ -173,9 +174,8 @@ If this file exists (and can be read), it will be parsed line by line as follows
     * `mirror` can be specified multiple times for multiple mirrors.
 * All other lines are ignored.
 
-Entries in `.shdlconfig` have higher priority than commandline arguments, meaning that the corresponding commandline
-arguments **will be discarded**. To suppress this behavior, use an empty `.shdlconfig` file, or simply provide an empty
-string for the option (`--config ""`)
+Entries in `.shdlconfig` have lower priority than commandline arguments, meaning that the corresponding commandline
+arguments will **override** the settings in `.shdlconfig`, including `mirror`.
 
 **NOTE** This feature is experimental and is subject to change.
 

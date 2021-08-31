@@ -4,11 +4,8 @@ from re import match as re_match
 from re import IGNORECASE
 import requests as rq
 
-from src.RepoHandler._BaseRepoHandler import _BaseRepoHandler
-from src.CommonUtil import *
-
-if __name__ == '__main__':
-    quit()
+from ..CommonUtil import *
+from ._BaseRepoHandler import _BaseRepoHandler
 
 
 class ArxivRepoHandler(_BaseRepoHandler):

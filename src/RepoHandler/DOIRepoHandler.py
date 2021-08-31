@@ -13,9 +13,8 @@ from unicodedata import name as ud_name
 from xml.etree import ElementTree as eTree
 from typing import Union
 
-from src.RepoHandler._BaseRepoHandler import _BaseRepoHandler
-from src.CLIArgParser import *
-from src.CommonUtil import *
+from ..CommonUtil import *
+from ._BaseRepoHandler import _BaseRepoHandler
 
 if __name__ == '__main__':
     quit()

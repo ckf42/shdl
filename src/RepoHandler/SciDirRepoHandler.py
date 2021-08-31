@@ -1,11 +1,8 @@
 from re import match as re_match
+from re import IGNORECASE
 
-from src.CLIArgParser import *
-from src.CommonUtil import *
-from src.RepoHandler.DOIRepoHandler import *
-
-if __name__ == '__main__':
-    quit()
+from ..CommonUtil import *
+from .DOIRepoHandler import DOIRepoHandler
 
 
 class SciDirRepoHandler(DOIRepoHandler):
@@ -88,7 +85,7 @@ class SciDirRepoHandler(DOIRepoHandler):
         for line in self.metadata_response.text.splitlines():
             if line.startswith('DO  - '):
                 # doc has DOI
-                self.identifier = re_match(r'^DO  - .+?doi.+?/(.+)$',
+                self.identifier = re_match(r'^DO {2}- .+?doi.+?/(.+)$',
                                            line).group(1)
                 info_print(f"Document has DOI {self.identifier}. "
                            "Will use this for querying mirror")

@@ -1,12 +1,8 @@
 from re import match as re_match
 from re import IGNORECASE
 
-from src.CLIArgParser import *
-from src.CommonUtil import *
-from src.RepoHandler.DOIRepoHandler import *
-
-if __name__ == '__main__':
-    quit()
+from ..CommonUtil import *
+from .DOIRepoHandler import DOIRepoHandler
 
 
 class JSTORRepoHandler(DOIRepoHandler):

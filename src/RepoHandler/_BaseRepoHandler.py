@@ -3,10 +3,7 @@ from requests import Response as rq_Response
 
 from typing import Optional, Tuple, Union
 
-from src.CommonUtil import *
-
-if __name__ == '__main__':
-    quit()
+from ..CommonUtil import *
 
 
 class _BaseRepoHandler(ABC):

@@ -3,17 +3,14 @@
 from re import sub as re_sub
 from re import split as re_split
 
-from src.CLIArgParser import *
-from src.CommonUtil import *
-from src.StringTransformer import *
-from src.LocalFileHandler import *
-from src.RepoHandler.RegisteredRepo import *
-from src.RepoHandler.DOIRepoHandler import *
+from src import *
 
 if __name__ != '__main__':
     console_print("This module is not for import")
     quit()
 
+console_print("Received cli arguments: ",
+              msg_verbose_level=VerboseLevel.DEBUG)
 console_print(cliArg, msg_verbose_level=VerboseLevel.DEBUG)
 
 # check repo

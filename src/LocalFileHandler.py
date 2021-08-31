@@ -4,11 +4,7 @@ import requests as rq
 from pathlib import Path
 from typing import Union
 
-from src.CommonUtil import *
-from src.CLIArgParser import *
-
-if __name__ == '__main__':
-    quit()
+from .CommonUtil import *
 
 
 def _get_local_file_write_handler(

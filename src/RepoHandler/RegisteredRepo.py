@@ -1,14 +1,13 @@
-# register repo handler here
+from .ArxivRepoHandler import ArxivRepoHandler
+from .DOIRepoHandler import DOIRepoHandler
+from .JSTORRepoHandler import JSTORRepoHandler
+from .SciDirRepoHandler import SciDirRepoHandler
+from .IEEERepoHandler import IEEERepoHandler
 
-from src.RepoHandler.ArxivRepoHandler import *
-from src.RepoHandler.DOIRepoHandler import *
-from src.RepoHandler.JSTORRepoHandler import *
-from src.RepoHandler.SciDirRepoHandler import *
-from src.RepoHandler.IEEERepoHandler import *
-
-# query are checked in this order
-registered_repo_list = [DOIRepoHandler,
-                        ArxivRepoHandler,
-                        JSTORRepoHandler,
-                        SciDirRepoHandler,
-                        IEEERepoHandler]
+registered_repo_list = [
+    DOIRepoHandler,
+    ArxivRepoHandler,
+    JSTORRepoHandler,
+    SciDirRepoHandler,
+    IEEERepoHandler
+]

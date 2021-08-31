@@ -4,10 +4,7 @@ from unicodedata import category, name, normalize
 
 from typing import Dict, Tuple
 
-from src.CommonUtil import *
-
-if __name__ == '__main__':
-    quit()
+from .CommonUtil import *
 
 
 def sanitize_filename(proposed_filename: str) -> str:
