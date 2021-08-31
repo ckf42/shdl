@@ -18,10 +18,10 @@ To use the script, you will need:
     * install with `pip install --user requests`
 * [PySocks](https://pypi.org/project/PySocks/ "PyPI page")
     * if you need to use socks proxy (e.g. TOR), install this with `pip install --user PySocks`
-    * alternatively install `requests` with socks extra via `pip install --user requests[socks]`
+    * alternatively, install `requests` with socks extra via `pip install --user requests[socks]`
 
 You can simply clone this repo and install Python along with all the dependency packages
-with `pip install -r requirements.txt`. The script would then be ready to use.
+with `pip install --user -r requirements.txt`. The script would then be ready to use.
 
 [Standalone executable](https://github.com/ckf42/shdl/releases) is (currently) only available for Windows x64 and is
 considered experimental. *Use at your own risk*.
@@ -224,16 +224,14 @@ Note that argument for `--dir` is `"~/document directory to save file"`
 ### Design
 
 * Optimize dependencies
+    * Resolve circular import and simplify structure
+    * Merge `CLIArgParser` and `CommonUtil`?
     * Use urllib instead of requests?
 
 ### Testing
 
 * Test on other versions of Python
 * Check compatibility on other OS
-
-### Miscellaneous
-
-* Better repo structure organization
 
 ## License
 

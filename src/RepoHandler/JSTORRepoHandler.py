@@ -35,10 +35,8 @@ class JSTORRepoHandler(DOIRepoHandler):
                == 'application/x-research-info-systems'
 
     def get_metadata_response(self):
-        # query_url = 'https://www.jstor.org/citation/ris/{id}'.format(
-        #     id=self.identifier)
-        # verbose_print(f"Fetching from {PColor.PATH(query_url)}")
-        # return rq.get(query_url, **cliArg['rqKwargs'])
+        # metadata is fetch in self.extract_metadata
+        # TODO better resolution
         return None
 
     def get_download_url(self, mirror_link, **kwargs):

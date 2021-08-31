@@ -11,8 +11,7 @@ from src.RepoHandler.RegisteredRepo import *
 from src.RepoHandler.DOIRepoHandler import *
 
 if __name__ != '__main__':
-    console_print("This module is not for import",
-                  msg_verbose_level=VerboseLevel.PRINT)
+    console_print("This module is not for import")
     quit()
 
 console_print(cliArg, msg_verbose_level=VerboseLevel.DEBUG)

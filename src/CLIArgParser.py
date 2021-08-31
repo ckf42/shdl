@@ -132,6 +132,9 @@ from src.CommonUtil import *
 
 # cliArg handling
 cliArg['identifier'] = unquote(cliArg['identifier'])
+cliArg['verbose'] = VerboseLevel(cliArg['verbose'])
+console_print(f"Verbose level: {cliArg['verbose'].name}",
+              msg_verbose_level=VerboseLevel.INFO)
 
 # read config file if present
 if cliArg['config'] != '':

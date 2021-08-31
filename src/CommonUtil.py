@@ -15,7 +15,8 @@ class PColor(Enum):
     ERROR = '\033[91m'
     NULL = '\033[0m'
 
-    def __call__(self, msg: str,
+    def __call__(self,
+                 msg: str,
                  color_display: bool = not cliArg['nocolor']) -> str:
         if not color_display:
             return msg
@@ -38,26 +39,19 @@ class VerboseLevel(IntEnum):
             return VerboseLevel(max(VerboseLevel.__members__.values()))
 
 
-def _base_print(msg: str,
-                *args,
-                print_suppress: bool = cliArg['piping'],
-                **kwargs) -> None:
-    # lower level print function
-    if not print_suppress:
-        print(msg, *args, **kwargs)
-
-
 def console_print(
         msg: str,
         *args,
-        msg_verbose_level: VerboseLevel = VerboseLevel.INFO,
-        config_verbose_level: VerboseLevel = VerboseLevel(cliArg['verbose']),
+        msg_verbose_level: VerboseLevel = VerboseLevel.PRINT,
+        print_suppress: bool = cliArg['piping'],
         **kwargs) -> None:
-    if msg_verbose_level <= config_verbose_level:
-        _base_print(msg, *args, **kwargs)
+    if not print_suppress \
+            and msg_verbose_level <= cliArg['verbose']:
+        print(msg, *args, **kwargs)
 
 
 def info_print(msg: str, *args, **kwargs):
+    # sugar
     console_print(msg, msg_verbose_level=VerboseLevel.INFO, *args, **kwargs)
 
 
