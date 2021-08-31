@@ -22,7 +22,8 @@ class ArxivRepoHandler(_BaseRepoHandler):
         if match_gp:
             return match_gp.group(4)
         else:
-            info_print(f"Failed parsing identifier as type {cls.repo_name}")
+            info_print(f"{PColor.WARNING('Failed')} parsing identifier as "
+                       f"type {PColor.INFO(cls.repo_name)}")
             return None
 
     @classmethod
@@ -31,7 +32,8 @@ class ArxivRepoHandler(_BaseRepoHandler):
                and 'http://arxiv.org/api/errors' not in response_obj.text
 
     def get_metadata_response(self):
-        info_print(f"Fetching metadata for type {self.repo_name}...")
+        info_print(f"{PColor.INFO('Fetching metadata')} "
+                   f"for type {PColor.INFO(self.repo_name)}...")
         return rq.get(
             'http://export.arxiv.org/api/query?id_list={id}'.format(
                 id=self.identifier

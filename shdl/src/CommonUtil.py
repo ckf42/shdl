@@ -12,7 +12,7 @@ from .CliArg import cliArg
 
 @unique
 class VerboseLevel(IntEnum):
-    PRINT = 0
+    PRINT = 0  # always print unless explicitly suppressed
     INFO = 1
     VERBOSE = 2
     DEBUG = 3
@@ -150,18 +150,19 @@ else:
                   msg_verbose_level=VerboseLevel.VERBOSE)
 
 # assign default parameter (may be overriden in config file)
-for k, v in _defaultDict.items():
-    if cliArg[k] is None or cliArg[k] is False:
-        cliArg[k] = v
+for _k, _v in _defaultDict.items():
+    if cliArg[_k] is None or cliArg[_k] is False:
+        cliArg[_k] = _v
 
 
 # default is applied, can define these two
 # print colors for xterm-256color
 class PColor(Enum):
-    DOI = '\033[94m'
+    ID = '\033[94m'
     PATH = '\033[92m'
     WARNING = '\033[93m'
     ERROR = '\033[91m'
+    INFO = '\033[96m'
     NULL = '\033[0m'
 
     def __call__(self,

@@ -19,11 +19,13 @@ class IEEERepoHandler(DOIRepoHandler):
         if match_gp:
             return match_gp.group(3)
         else:
-            info_print(f"Failed parsing identifier as type {cls.repo_name}")
+            info_print(f"{PColor.WARNING('Failed')} parsing identifier as "
+                       f"type {PColor.INFO(cls.repo_name)}")
             return None
 
     def get_metadata_response(self):
-        info_print(f"Fetching metadata for type {self.repo_name}...")
+        info_print(f"{PColor.INFO('Fetching metadata')} "
+                   f"for type {PColor.INFO(self.repo_name)}...")
         return rq.get(
             'http://ieeexplore.ieee.org/rest/search/citation/format'
             '?recordIds={id}&download-format=download-ris'

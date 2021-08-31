@@ -22,11 +22,13 @@ class SciDirRepoHandler(DOIRepoHandler):
         if match_gp:
             return match_gp.group(6)
         else:
-            info_print(f"Failed parsing identifier as type {cls.repo_name}")
+            info_print(f"{PColor.WARNING('Failed')} parsing identifier as "
+                       f"type {PColor.INFO(cls.repo_name)}")
             return None
 
     def get_metadata_response(self):
-        info_print(f"Fetching metadata for type {self.repo_name}...")
+        info_print(f"{PColor.INFO('Fetching metadata')} "
+                   f"for type {PColor.INFO(self.repo_name)}...")
         splitted_id = self.identifier.split('/', 1)
         if len(splitted_id) == 1:
             info_print(PColor.WARNING("WARNING:"), end=" ")

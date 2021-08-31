@@ -163,6 +163,7 @@ def autoname_patcher(metadata_dict: dict,
     }
     console_print("Available autoname variables (not sanitized):",
                   msg_verbose_level=VerboseLevel.DEBUG)
-    console_print(str(title_kw_dict),
-                  msg_verbose_level=VerboseLevel.DEBUG)
+    for _k, _v in title_kw_dict.items():
+        console_print(PColor.INFO(_k) + ": " + str(_v),
+                      msg_verbose_level=VerboseLevel.DEBUG)
     return sanitize_filename(inputted_format_str.format_map(title_kw_dict))

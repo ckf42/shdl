@@ -52,7 +52,8 @@ class DOIRepoHandler(_BaseRepoHandler):
         if match_gp:
             return match_gp.group(9)
         else:
-            info_print(f"Failed parsing identifier as type {cls.repo_name}")
+            info_print(f"{PColor.WARNING('Failed')} parsing identifier as "
+                       f"type {PColor.INFO(cls.repo_name)}")
             return None
 
     @classmethod
@@ -62,7 +63,8 @@ class DOIRepoHandler(_BaseRepoHandler):
                == 'application/vnd.citationstyles.csl+json'
 
     def get_metadata_response(self):
-        info_print(f"Fetching metadata for type {self.repo_name}...")
+        info_print(f"{PColor.INFO('Fetching metadata')} "
+                   f"for type {PColor.INFO(self.repo_name)}...")
         return rq.get(
             'https://doi.org/{id}'.format(id=self.identifier),
             headers={"Accept": "application/vnd.citationstyles.csl+json"}

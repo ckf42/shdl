@@ -14,7 +14,9 @@ def _get_local_file_write_handler(
         info_print("Target download path is too long")
         return False
     if cliArg['dryrun']:
-        info_print("Dryrun. Skipping getting local file handle")
+        console_print(
+            f"{PColor.INFO('Dryrun')}. Skipping getting local file handle",
+            msg_verbose_level=VerboseLevel.PRINT)
         return True
     info_print(f"Downloading to {PColor.PATH(str(write_path_obj))}")
     try:
@@ -34,7 +36,8 @@ def _download_file_to_local(target_url: str,
     if cliArg['dryrun']:
         # just to be safe
         assert local_file_handle.closed
-        info_print("Dryrun. Skipping download")
+        console_print(f"{PColor.INFO('Dryrun')}. Skipping download",
+                      msg_verbose_level=VerboseLevel.PRINT)
         return True
     downloaded_size = 0
     last_line_len = 0

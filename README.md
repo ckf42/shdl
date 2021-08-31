@@ -14,17 +14,19 @@ A script to fetch files by their identifiers
 To use the script, you will need:
 
 * Python 3.8+
-* [requests](https://pypi.org/project/requests/ "PyPI page")
-    * install with `pip install --user requests`
-* [PySocks](https://pypi.org/project/PySocks/ "PyPI page")
-    * if you need to use socks proxy (e.g. TOR), install this with `pip install --user PySocks`
-    * alternatively, install `requests` with socks extra via `pip install --user requests[socks]`
+* [requests package](https://pypi.org/project/requests/ "PyPI page")
+* [PySocks package](https://pypi.org/project/PySocks/ "PyPI page")
 
-You can simply clone this repo and install Python along with all the dependency packages
-with `pip install --user -r requirements.txt`. The script would then be ready to use.
+To use this script, you need to first install Python, then
 
-[Standalone executable](https://github.com/ckf42/shdl/releases) is (currently) only available for Windows x64 and is
-considered experimental. *Use at your own risk*.
+* clone this repo and install all dependencies via `pip install --user -r requirements.txt`; or
+* install the pre-built wheel from [release page](https://github.com/ckf42/shdl/releases)
+  with `pip --user install shdl.whl`
+
+You can build the wheel with `python -m buil` (You may need `pip install -U build` first)
+
+Alternatively, you can use [the standalone executable binary](https://github.com/ckf42/shdl/releases). It is (currently)
+only available for Windows x64 and is considered experimental. **Use at your own risk**.
 
 ## Usage
 
