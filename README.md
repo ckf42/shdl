@@ -203,9 +203,11 @@ Note that argument for `--dir` is `"~/document directory to save file"`
 
 ## Dependencies
 
+Listing only the explicit ones
+
 * Python 3 (support 3.8, 3.9)
-* [requests](https://pypi.org/project/requests/ "PyPI page") (support 2.26.0)
-* [PySocks](https://pypi.org/project/PySocks/ "PyPI page") (support 1.7.1)
+* [requests](https://pypi.org/project/requests/ "PyPI page")~=2.26.0 (Apache 2.0)
+* [PySocks](https://pypi.org/project/PySocks/ "PyPI page")~=1.7.1 (BSD-3)
 
 ## TODO
 
@@ -232,6 +234,10 @@ Note that argument for `--dir` is `"~/document directory to save file"`
 
 * Test on other versions of Python
 * Check compatibility on other OS
+
+### Miscellaneous
+
+* Check if MIT is an appropriate license
 
 ## License
 
