@@ -23,11 +23,11 @@ def main():
 
     # check metadata
     console_print("Metadata response: ", msg_verbose_level=VerboseLevel.DEBUG)
-    for _k, _v in repo_obj.metadata.items():
-        console_print(PColor.INFO(_k) + ": " + str(_v))
     if not repo_obj.is_meta_response_valid:
         quit_with_error(ErrorType.QUERY_INVALID,
                         error_msg="No metadata found")
+    for _k, _v in repo_obj.metadata.items():
+        console_print(PColor.INFO(_k) + ": " + str(_v))
 
     # patch autoname
     proposedName = cliArg['output']
