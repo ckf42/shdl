@@ -23,7 +23,7 @@ To use this script, you need to first install Python, then
 * install the pre-built wheel from [release page](https://github.com/ckf42/shdl/releases)
   with `pip --user install shdl.whl`
 
-You can build the wheel yourself with `python -m buil` (You may need `pip install -U build` first)
+You can build the wheel yourself with `python -m build` (You may need `pip install -U build` first)
 
 Alternatively, you can use [the standalone executable](https://github.com/ckf42/shdl/releases). It is (currently)
 only available for Windows x64 and is considered experimental. **Use at your own risk**.
