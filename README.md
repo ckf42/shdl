@@ -4,7 +4,7 @@ A script to fetch files by their identifiers
 
 ## Features
 
-* Fetch document with DOI and arXiv identifier
+* Fetch documents by their identifiers from online mirrors
 * Custom proxy
 * Custom mirrors
 * Decide file name via its metadata
@@ -23,10 +23,12 @@ To use this script, you need to first install Python, then
 * install the pre-built wheel from [release page](https://github.com/ckf42/shdl/releases)
   with `pip --user install shdl.whl`
 
-You can build the wheel with `python -m buil` (You may need `pip install -U build` first)
+You can build the wheel yourself with `python -m buil` (You may need `pip install -U build` first)
 
-Alternatively, you can use [the standalone executable binary](https://github.com/ckf42/shdl/releases). It is (currently)
+Alternatively, you can use [the standalone executable](https://github.com/ckf42/shdl/releases). It is (currently)
 only available for Windows x64 and is considered experimental. **Use at your own risk**.
+
+To build the standalone executable, install [PyInstaller](https://www.pyinstaller.org/) (and optionally [UPX](https://upx.github.io/)), then execute `pyinstaller --onefile --icon NONE shdl.py`.
 
 ## Usage
 
@@ -117,7 +119,7 @@ arguments. Available keywords are:
 The algorithms used for checking author names and converting title into title casing are rather simple and may not give
 the desired results.
 
-Double quotes are not necessary if the format string does not include space.
+Double quotes are required if the format string contains space.
 
 The key `year` (and `year2`) may not be available in metadata. In this case, they will be replaced by an empty string.
 
@@ -208,8 +210,8 @@ Note that argument for `--dir` is `"~/document directory to save file"`
 Listing only the explicit ones
 
 * Python 3 (support 3.8, 3.9)
-* [requests](https://pypi.org/project/requests/ "PyPI page")~=2.26.0 (Apache 2.0)
-* [PySocks](https://pypi.org/project/PySocks/ "PyPI page")~=1.7.1 (BSD-3)
+* [requests](https://pypi.org/project/requests/ "PyPI page") ~= 2.26.0 (Apache 2.0)
+* [PySocks](https://pypi.org/project/PySocks/ "PyPI page") ~= 1.7.1 (BSD-3)
 
 ## TODO
 
@@ -221,21 +223,19 @@ Listing only the explicit ones
 
 ### Usability
 
-* Export as standalone executable
-    * Pyinstaller with UPX produced 9MB standalone executable with slow startup time.
-* Provide module integration
+* Check if build specs are alright
+* Check why PyInstaller sometimes packs hooks that are not needed (e.g. IPython, matplotlib) and bloats size to ~16MB
 
 ### Design
 
 * Optimize dependencies
-    * Resolve circular import and simplify structure
-    * Merge `CLIArgParser` and `CommonUtil`?
     * Use urllib instead of requests?
 
 ### Testing
 
 * Test on other versions of Python
 * Check compatibility on other OS
+* Better tests
 
 ### Miscellaneous
 
