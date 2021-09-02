@@ -32,8 +32,9 @@ class ArxivRepoHandler(_BaseRepoHandler):
                and 'http://arxiv.org/api/errors' not in response_obj.text
 
     def get_metadata_response(self):
-        info_print(f"{PColor.INFO('Fetching metadata')} "
-                   f"for type {PColor.INFO(self.repo_name)}...")
+        console_print(f"{PColor.INFO('Fetching metadata')} "
+                      f"for type {PColor.INFO(self.repo_name)}...",
+                      msg_verbose_level=VerboseLevel.VERBOSE)
         return rq.get(
             'http://export.arxiv.org/api/query?id_list={id}'.format(
                 id=self.identifier

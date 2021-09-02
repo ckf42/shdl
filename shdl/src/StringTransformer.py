@@ -16,16 +16,23 @@ def sanitize_filename(proposed_filename: str) -> str:
     :return: str.
         The sanitized filename string
     """
-    return ' '.join(
-        normalize(
-            'NFKD',
-            proposed_filename.translate(str.maketrans(
-                {k: ' ' for k in '/<>:\"\\|?*'}
-            )).translate(str.maketrans({
-                '’': '\''
-            }))
-            # unicode non Sm category replacement
-        ).encode('ASCII', 'ignore').decode().split(None)
+    return sub(
+        # remove spaces around characters that were put as part of a word
+        r' ([\-]) ?',
+        r'\1',
+        ' '.join(
+            normalize(
+                'NFKD',
+                proposed_filename.translate(str.maketrans(
+                    # invalid characters that cannot be used in filename
+                    {k: ' ' for k in '/<>:\"\\|?*'}
+                )).translate(str.maketrans({
+                    # special unicode character replacement
+                    '’': '\''
+                }))
+                # unicode non Sm category replacement
+            ).encode('ASCII', 'ignore').decode().split(None)
+        )
     )
 
 
@@ -63,11 +70,15 @@ def convert_math_symbol_to_name(raw_title_string: str) -> str:
     :return: str.
         The sanitized string with math symbols converted into their names
     """
-    return ''.join((f' {name(c).title()}'
-                    if not c.isascii() and category(c) == 'Sm'
-                    else c)
-                   for c
-                   in sub('</?.+?>', '', unescape(raw_title_string)))
+    return sub(
+        r'\$\$\s*([^$]+)\s*\$\$\s*',
+        r'\1',
+        ''.join((f' {name(c).title()}'
+                 if not c.isascii() and category(c) == 'Sm'
+                 else c)
+                for c
+                in sub('</?.+?>', '', unescape(raw_title_string)))
+    ).replace('\\', '')
 
 
 # list modified from https://gist.github.com/sebleier/554280

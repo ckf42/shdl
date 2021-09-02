@@ -27,7 +27,8 @@ def main():
         quit_with_error(ErrorType.QUERY_INVALID,
                         error_msg="No metadata found")
     for _k, _v in repo_obj.metadata.items():
-        console_print(PColor.INFO(_k) + ": " + str(_v))
+        console_print(PColor.INFO(_k) + ": " + str(_v),
+                      msg_verbose_level=VerboseLevel.DEBUG)
 
     # patch autoname
     proposedName = cliArg['output']

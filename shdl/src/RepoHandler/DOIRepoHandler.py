@@ -63,8 +63,9 @@ class DOIRepoHandler(_BaseRepoHandler):
                == 'application/vnd.citationstyles.csl+json'
 
     def get_metadata_response(self):
-        info_print(f"{PColor.INFO('Fetching metadata')} "
-                   f"for type {PColor.INFO(self.repo_name)}...")
+        console_print(f"{PColor.INFO('Fetching metadata')} "
+                      f"for type {PColor.INFO(self.repo_name)}...",
+                      msg_verbose_level=VerboseLevel.VERBOSE)
         return rq.get(
             'https://doi.org/{id}'.format(id=self.identifier),
             headers={"Accept": "application/vnd.citationstyles.csl+json"}

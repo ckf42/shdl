@@ -3,6 +3,10 @@
 # trigger
 
 if __name__ == '__main__':
-    from shdl import main
+    try:
+        from shdl import main
 
-    main()
+        main()
+    except KeyboardInterrupt:
+        # do nothing
+        pass

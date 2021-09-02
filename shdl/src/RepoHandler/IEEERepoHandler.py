@@ -24,8 +24,9 @@ class IEEERepoHandler(DOIRepoHandler):
             return None
 
     def get_metadata_response(self):
-        info_print(f"{PColor.INFO('Fetching metadata')} "
-                   f"for type {PColor.INFO(self.repo_name)}...")
+        console_print(f"{PColor.INFO('Fetching metadata')} "
+                      f"for type {PColor.INFO(self.repo_name)}...",
+                      msg_verbose_level=VerboseLevel.VERBOSE)
         return rq.get(
             'http://ieeexplore.ieee.org/rest/search/citation/format'
             '?recordIds={id}&download-format=download-ris'

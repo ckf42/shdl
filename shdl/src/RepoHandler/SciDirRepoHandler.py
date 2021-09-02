@@ -27,8 +27,9 @@ class SciDirRepoHandler(DOIRepoHandler):
             return None
 
     def get_metadata_response(self):
-        info_print(f"{PColor.INFO('Fetching metadata')} "
-                   f"for type {PColor.INFO(self.repo_name)}...")
+        console_print(f"{PColor.INFO('Fetching metadata')} "
+                      f"for type {PColor.INFO(self.repo_name)}...",
+                      msg_verbose_level=VerboseLevel.VERBOSE)
         splitted_id = self.identifier.split('/', 1)
         if len(splitted_id) == 1:
             info_print(PColor.WARNING("WARNING:"), end=" ")

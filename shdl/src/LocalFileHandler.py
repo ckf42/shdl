@@ -1,18 +1,26 @@
-from io import BufferedWriter
-
 import requests as rq
 from pathlib import Path
-from typing import Union
+from typing import BinaryIO, Union
 
 from .CommonUtil import *
 
 
 def _get_local_file_write_handler(
-        write_path_obj: Path) -> Union[BufferedWriter, bool]:
+        write_path_obj: Path) -> Union[bool, BinaryIO]:
     if len(str(write_path_obj)) >= 250:
         info_print(PColor.ERROR("ERROR:"), end=" ")
         info_print("Target download path is too long")
         return False
+    elif write_path_obj.is_dir():
+        console_print(f"{PColor.WARNING('ERROR:')} Cannot open path. "
+                      f"Target path {PColor.PATH(str(write_path_obj))} "
+                      "already exists as a directory. ")
+        return False
+    elif write_path_obj.is_file():
+        console_print(f"{PColor.WARNING('WARNING')}: "
+                      f"Target path {PColor.PATH(str(write_path_obj))} "
+                      "already exists. \n"
+                      "File will be overwritten")
     if cliArg['dryrun']:
         console_print(
             f"{PColor.INFO('Dryrun')}. Skipping getting local file handle",
@@ -31,7 +39,7 @@ def _get_local_file_write_handler(
 
 
 def _download_file_to_local(target_url: str,
-                            local_file_handle: BufferedWriter,
+                            local_file_handle: BinaryIO,
                             **kwargs) -> bool:
     if cliArg['dryrun']:
         # just to be safe
@@ -42,7 +50,8 @@ def _download_file_to_local(target_url: str,
     downloaded_size = 0
     last_line_len = 0
     dl_msg = None
-    info_print(f"Downloading from {PColor.PATH(target_url)} ...")
+    console_print(f"Downloading from {PColor.PATH(target_url)} ...",
+                  msg_verbose_level=VerboseLevel.VERBOSE)
     with rq.get(target_url, stream=True, **kwargs) as dl_res:
         file_size = dl_res.headers.get('Content-Length', None)
         if file_size is None:
