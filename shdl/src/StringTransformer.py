@@ -21,14 +21,18 @@ def sanitize_filename(proposed_filename: str) -> str:
         r' ([\-]) ?',
         r'\1',
         ' '.join(
-            normalize(
+            normalize(  # deals with diacritics
                 'NFKD',
                 proposed_filename.translate(str.maketrans(
                     # invalid characters that cannot be used in filename
                     {k: ' ' for k in '/<>:\"\\|?*'}
                 )).translate(str.maketrans({
                     # special unicode character replacement
-                    '’': '\''
+                    # TODO need a better method of converting e.g. punctuations
+                    #      to ASCII
+                    '\u2019': '\'',
+                    '\u2013': '-',
+                    '\u2014': '-'
                 }))
                 # unicode non Sm category replacement
             ).encode('ASCII', 'ignore').decode().split(None)
