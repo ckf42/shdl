@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+python -m build && pyinstaller --onefile --icon NONE shdl.py
