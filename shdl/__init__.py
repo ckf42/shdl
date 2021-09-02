@@ -14,9 +14,9 @@ def main():
                      if (obj := cls(cliArg['identifier'])).is_query_valid),
                     None)
     if repo_obj is None:
-        info_print(PColor.WARNING("WARNING:"), end=" ")
-        info_print("Input query format not recognized. "
-                   "Assuming it is sanitized DOI")
+        console_print(PColor.WARNING("WARNING:"), end=" ")
+        console_print("Input query format not recognized. "
+                      "Assuming it is sanitized DOI")
         repo_obj = DOIRepoHandler('doi: ' + cliArg['identifier'])
     info_print(f"Detected identifier type: {PColor.INFO(repo_obj.repo_name)}")
     info_print(f"Sanitized identifier: {PColor.PATH(repo_obj.identifier)}")
@@ -34,10 +34,10 @@ def main():
     proposedName = cliArg['output']
     if proposedName is None and cliArg['autoname']:
         if repo_obj.metadata is None:
-            info_print(PColor.WARNING("WARNING:"), end=" ")
-            info_print("Unable to fetch metadata "
-                       f"for identifier {repo_obj.identifier}")
-            info_print("Name falls back to remote name")
+            console_print(PColor.WARNING("WARNING:"), end=" ")
+            console_print("Unable to fetch metadata "
+                          f"for identifier {repo_obj.identifier}")
+            console_print("Name falls back to remote name")
             cliArg['autoname'] = False  # not really necessary
         else:
             assert isinstance(repo_obj.metadata, dict)
@@ -50,14 +50,14 @@ def main():
                 proposedName = autoname_patcher(repo_obj.metadata,
                                                 cliArg['autoformat'])
             except ValueError:
-                info_print(PColor.ERROR("ERROR:"), end=" ")
-                info_print("Autoformat invalid. "
-                           "Name falls back to remote name")
+                console_print(PColor.ERROR("ERROR:"), end=" ")
+                console_print("Autoformat invalid. "
+                              "Name falls back to remote name")
             except KeyError as e:
-                info_print(PColor.ERROR("ERROR:"), end=" ")
-                info_print(f"Unknown keyword: {e.args[0]}")
-                info_print("Autoformat invalid. "
-                           "Name falls back to remote name")
+                console_print(PColor.ERROR("ERROR:"), end=" ")
+                console_print(f"Unknown keyword: {e.args[0]}")
+                console_print("Autoformat invalid. "
+                              "Name falls back to remote name")
             else:
                 # check validity later when dl link is fetched
                 # as ext is yet not known

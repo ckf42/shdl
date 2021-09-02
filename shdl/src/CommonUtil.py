@@ -179,11 +179,11 @@ def quit_with_error(with_this_code: ErrorType = ErrorType.SUCCEED,
     if with_this_code == ErrorType.SUCCEED:
         quit(0)
     else:
-        info_print(PColor.ERROR.__call__("ERROR:")
-                   + " "
-                   + (with_this_code.description()
-                      if error_msg is None
-                      else error_msg))
+        console_print(PColor.ERROR.__call__("ERROR:")
+                      + " "
+                      + (with_this_code.description()
+                         if error_msg is None
+                         else error_msg))
         quit(with_this_code)
 
 
@@ -214,8 +214,8 @@ cliArg['proxy'] = {scheme: cliArg['proxy'] for scheme in ('http', 'https')} \
     if cliArg['proxy'] is not None and cliArg['proxy'] != '' \
     else None
 if cliArg['proxy'] is None:
-    info_print(PColor.WARNING("WARNING:"), end=" ")
-    info_print("No proxy configured")
+    console_print(PColor.WARNING("WARNING:"), end=" ")
+    console_print("No proxy configured")
 
 # network para
 cliArg['rqKwargs'] = {
