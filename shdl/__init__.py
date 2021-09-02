@@ -2,12 +2,6 @@ from shdl.src import *
 
 
 def main():
-    console_print("Received cli arguments: ",
-                  msg_verbose_level=VerboseLevel.DEBUG)
-    for _k, _v in cliArg.items():
-        console_print(PColor.INFO(_k) + ": " + str(_v),
-                      msg_verbose_level=VerboseLevel.DEBUG)
-
     # check repo
     repo_obj = next((obj
                      for cls in registered_repo_list
@@ -31,8 +25,8 @@ def main():
                       msg_verbose_level=VerboseLevel.DEBUG)
 
     # patch autoname
-    proposedName = cliArg['output']
-    if proposedName is None and cliArg['autoname']:
+    proposed_name = cliArg['output']
+    if proposed_name is None and cliArg['autoname']:
         if repo_obj.metadata is None:
             console_print(PColor.WARNING("WARNING:"), end=" ")
             console_print("Unable to fetch metadata "
@@ -47,8 +41,8 @@ def main():
                           f"{cliArg['autoformat']}",
                           msg_verbose_level=VerboseLevel.VERBOSE)
             try:
-                proposedName = autoname_patcher(repo_obj.metadata,
-                                                cliArg['autoformat'])
+                proposed_name = autoname_patcher(repo_obj.metadata,
+                                                 cliArg['autoformat'])
             except ValueError:
                 console_print(PColor.ERROR("ERROR:"), end=" ")
                 console_print("Autoformat invalid. "
@@ -61,7 +55,7 @@ def main():
             else:
                 # check validity later when dl link is fetched
                 # as ext is yet not known
-                console_print("Proposed name: " + PColor.PATH(proposedName),
+                console_print("Proposed name: " + PColor.PATH(proposed_name),
                               msg_verbose_level=VerboseLevel.VERBOSE)
 
     # get download link
@@ -72,27 +66,27 @@ def main():
                       "Please specify mirrors with --mirror switch"
         )
     assert len(repo_obj.mirror_list) != 0
-    dlURL = next((lnk
-                  for mirrorURL in repo_obj.mirror_list
-                  if
-                  (lnk := repo_obj.get_download_url(mirrorURL)) is not None),
-                 None)
-    if dlURL is None:
+    dl_url = next(
+        (lnk
+         for mirrorURL in repo_obj.mirror_list
+         if (lnk := repo_obj.get_download_url(mirrorURL)) is not None),
+        None
+    )
+    if dl_url is None:
         quit_with_error(ErrorType.FILE_NOT_FOUND)
-    console_print("Download link: " + PColor.PATH(dlURL),
+    console_print("Download link: " + PColor.PATH(dl_url),
                   msg_verbose_level=VerboseLevel.VERBOSE)
 
     # download
-    if proposedName is None:
-        proposedName = dlURL.rsplit('/', 1)[-1].rsplit('.', 1)[0]
-    downloadPath = cliArg['dir'] / (
-            proposedName + '.' + dlURL.rsplit('.', 1)[-1])
-    console_print("Download path: " + PColor.PATH(str(downloadPath)),
+    if proposed_name is None:
+        proposed_name = dl_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
+    download_path = cliArg['dir'] / (
+            proposed_name + '.' + dl_url.rsplit('.', 1)[-1])
+    console_print("Download path: " + PColor.PATH(str(download_path)),
                   msg_verbose_level=VerboseLevel.VERBOSE)
-    if not fetch_url_to_local_path(dlURL, downloadPath):
+    if not fetch_url_to_local_path(dl_url, download_path):
         quit_with_error(ErrorType.OUTPUT_ERROR,
-                        error_msg="Cannot write to "
-                                  + PColor.PATH(str(downloadPath)))
+                        error_msg="Failed to download file ")
 
 
 console_print(PColor.INFO("Setup done"),

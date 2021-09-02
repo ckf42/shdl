@@ -71,6 +71,12 @@ class ErrorType(IntEnum):
         }.get(self.value, "UNKNOWN ERROR")
 
 
+console_print("Raw cli arguments: ",
+              msg_verbose_level=VerboseLevel.DEBUG)
+for _k, _v in cliArg.items():
+    console_print(f"{_k}: {str(_v)}",
+                  msg_verbose_level=VerboseLevel.DEBUG)
+
 # do cliArg postprocess
 
 _defaultDict = {
@@ -176,18 +182,22 @@ class PColor(Enum):
 
 def quit_with_error(with_this_code: ErrorType = ErrorType.SUCCEED,
                     error_msg: Optional[str] = None) -> NoReturn:
+    import sys
     if with_this_code == ErrorType.SUCCEED:
-        quit(0)
+        sys.exit(0)
     else:
         console_print(PColor.ERROR.__call__("ERROR:")
                       + " "
                       + (with_this_code.description()
                          if error_msg is None
                          else error_msg))
-        quit(with_this_code)
+        sys.exit(int(with_this_code))
 
 
 # start checking parameters validity
+console_print("Start checking cli arguments",
+              msg_verbose_level=VerboseLevel.DEBUG)
+
 assert isinstance(cliArg['dir'], str)
 try:
     cliArg['dir'] = (
@@ -200,22 +210,31 @@ except (NotADirectoryError, FileNotFoundError):
                     error_msg=f"{str(cliArg['dir'])} is not a valid directory")
 
 if cliArg['mirror'] is None:
-    quit_with_error(ErrorType.ARG_INVALID,
-                    error_msg="No mirror provided. "
-                              "Please specify at least a mirror "
-                              "in commandline argument or in shdlconfig file")
+    # should not quit without mirror: arxiv never needs one
+    # quit_with_error(ErrorType.ARG_INVALID,
+    #                 error_msg="No mirror provided. "
+    #                           "Please specify at least a mirror "
+    #                           "in commandline argument "
+    #                           "or in shdlconfig file")
+    cliArg['mirror'] = tuple()
 else:
     cliArg['mirror'] = tuple(
-        # enforce https if not specified
-        urlunparse(urlparse(mirrorURL, scheme="https"))
+        # enforce https unless specified, dirty hack
+        urlunparse(
+            urlparse(('//' if '//' not in mirrorURL else '') + mirrorURL,
+                     scheme="https")
+        )
         for mirrorURL in cliArg['mirror']
     )
+
 cliArg['proxy'] = {scheme: cliArg['proxy'] for scheme in ('http', 'https')} \
     if cliArg['proxy'] is not None and cliArg['proxy'] != '' \
     else None
 if cliArg['proxy'] is None:
-    console_print(PColor.WARNING("WARNING:"), end=" ")
-    console_print("No proxy configured")
+    console_print(PColor.WARNING.__call__("WARNING:"), end=" ",
+                  msg_verbose_level=VerboseLevel.INFO)
+    console_print("No proxy configured",
+                  msg_verbose_level=VerboseLevel.INFO)
 
 # network para
 cliArg['rqKwargs'] = {
@@ -242,3 +261,9 @@ except Exception as e:
 else:
     if cliArg['proxy'] is not None:
         info_print(f"Using proxy {cliArg['proxy']['https']}")
+
+console_print("Processed cli arguments: ",
+              msg_verbose_level=VerboseLevel.DEBUG)
+for _k, _v in cliArg.items():
+    console_print(PColor.INFO.__call__(_k) + ": " + str(_v),
+                  msg_verbose_level=VerboseLevel.DEBUG)

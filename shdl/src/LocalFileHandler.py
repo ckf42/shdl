@@ -26,7 +26,7 @@ def _get_local_file_write_handler(
             f"{PColor.INFO('Dryrun')}. Skipping getting local file handle",
             msg_verbose_level=VerboseLevel.PRINT)
         return True
-    info_print(f"Downloading to {PColor.PATH(str(write_path_obj))}")
+    # info_print(f"Downloading to {PColor.PATH(str(write_path_obj))}")
     try:
         f_handle = write_path_obj.open('wb')
     except (PermissionError, FileNotFoundError):
@@ -35,12 +35,17 @@ def _get_local_file_write_handler(
         console_print("Cannot write to "
                       f"target path \"{PColor.PATH(str(write_path_obj))}\"")
         return False
+    display_basename = (write_path_obj.name[:10]
+                        + ('... <truncated>'
+                           if len(write_path_obj.name) > 10
+                           else ''))
+    console_print("Target filename: "
+                  + PColor.PATH(display_basename))
     return f_handle
 
 
 def _download_file_to_local(target_url: str,
-                            local_file_handle: BinaryIO,
-                            **kwargs) -> bool:
+                            local_file_handle: BinaryIO) -> bool:
     if cliArg['dryrun']:
         # just to be safe
         assert local_file_handle.closed
@@ -50,9 +55,13 @@ def _download_file_to_local(target_url: str,
     downloaded_size = 0
     last_line_len = 0
     dl_msg = None
-    console_print(f"Downloading from {PColor.PATH(target_url)} ...",
-                  msg_verbose_level=VerboseLevel.VERBOSE)
-    with rq.get(target_url, stream=True, **kwargs) as dl_res:
+    # console_print(f"Downloading from {PColor.PATH(target_url)} ...",
+    #               msg_verbose_level=VerboseLevel.VERBOSE)
+    with rq.get(target_url, stream=True, **cliArg['rqKwargs']) as dl_res:
+        if dl_res.status_code != 200:
+            console_print("Failed to download from "
+                          f"target path {PColor.PATH(target_url)}")
+            return False
         file_size = dl_res.headers.get('Content-Length', None)
         if file_size is None:
             console_print("File size not known")
@@ -79,14 +88,11 @@ def _download_file_to_local(target_url: str,
 
 
 def fetch_url_to_local_path(target_url: str,
-                            target_local_path_obj: Path,
-                            **kwargs) -> bool:
+                            target_local_path_obj: Path) -> bool:
     file_handle = _get_local_file_write_handler(target_local_path_obj)
     if isinstance(file_handle, bool):
         return file_handle
-    dl_success_status = _download_file_to_local(target_url,
-                                                file_handle,
-                                                **kwargs)
+    dl_success_status = _download_file_to_local(target_url, file_handle)
     if cliArg['piping'] and dl_success_status:
         console_print(str(target_local_path_obj.resolve(True)),
                       print_suppress=False)

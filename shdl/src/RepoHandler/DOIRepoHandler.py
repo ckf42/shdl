@@ -16,9 +16,6 @@ from typing import Union
 from ..CommonUtil import *
 from ._BaseRepoHandler import _BaseRepoHandler
 
-if __name__ == '__main__':
-    quit()
-
 
 class DOIRepoHandler(_BaseRepoHandler):
     repo_name = "DOI"
@@ -166,7 +163,7 @@ class DOIRepoHandler(_BaseRepoHandler):
             line = unescape(line).strip()
             if (match_obj := self
                     .link_extractor.search(line, IGNORECASE)) is not None:
-                console_print(f"Line with possible link: {line}",
+                console_print(f"Line with possible link: {PColor.INFO(line)}",
                               msg_verbose_level=VerboseLevel.DETAIL)
                 dl_url = urlunparse(
                     urlparse(match_obj.group(1)

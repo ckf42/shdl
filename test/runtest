@@ -21,16 +21,16 @@ echo "Waiting for next test"
 echo ""
 sleep 5
 
-echo "\$ python3 ../shdl.py https://doi.org/10.1109/5.771073 -v --dryrun --output testfile --dir sample"
-python3 ../shdl.py https://doi.org/10.1109/5.771073 -v --dryrun --output testfile --dir sample
+echo "\$ python3 ../shdl.py https://doi.org/10.1109/5.771073 -v --dryrun --output testfile --dir sample -m sci-hub.st"
+python3 ../shdl.py https://doi.org/10.1109/5.771073 -v --dryrun --output testfile --dir sample -m sci-hub.st
 echo ""
 echo "Waiting for next test"
 echo ""
 sleep 5
 
 # arXiv test
-echo "\$ python3 ../shdl.py https://arxiv.org/abs/1501.00001 -v"
-python3 ../shdl.py https://arxiv.org/abs/1501.00001 -v
+echo "\$ python3 ../shdl.py https://arxiv.org/abs/1501.00001 -v -m sci-hub.st"
+python3 ../shdl.py https://arxiv.org/abs/1501.00001 -v -m sci-hub.st
 echo ""
 echo "Waiting for next test"
 echo ""
@@ -55,29 +55,36 @@ mkdir -p sample && python3 ../shdl.py https://arxiv.org/abs/1501.00001 -d sample
 echo ""
 
 # error test
-echo "\$ python3 ../shdl.py https://doi.org/nonexistence/doi"
-python3 ../shdl.py https://doi.org/nonexistence/doi
+echo "\$ python3 ../shdl.py https://doi.org/nonexistence/doi -m sci-hub.st"
+python3 ../shdl.py https://doi.org/nonexistence/doi -m sci-hub.st
 echo ""
 echo "Waiting for next test"
 echo ""
 sleep 5
 
-echo "\$ python3 ../shdl.py https://doi.org/10.1109/5.771073 -p invalidproxy -v"
-python3 ../shdl.py https://doi.org/10.1109/5.771073 -p invalidproxy -v
+echo "\$ python3 ../shdl.py https://doi.org/10.1109/5.771073 -p invalidproxy -v -m sci-hub.st"
+python3 ../shdl.py https://doi.org/10.1109/5.771073 -p invalidproxy -v -m sci-hub.st
 echo ""
 echo "Waiting for next test"
 echo ""
 sleep 5
 
-echo "\$ python3 ../shdl.py https://arxiv.org/nonexistence/doi -v"
-python3 ../shdl.py https://arxiv.org/nonexistence/doi -v
+echo "\$ python3 ../shdl.py https://doi.org/10.1109/5.771073 -v -m this.is.a.non.existence.mirror"
+python3 ../shdl.py https://doi.org/10.1109/5.771073 -v -m this.is.a.non.existence.mirror
 echo ""
 echo "Waiting for next test"
 echo ""
 sleep 5
 
-echo "\$ python3 ../shdl.py https://arxiv.org/abs/1501.00001 -p invalidproxy"
-python3 ../shdl.py https://arxiv.org/abs/1501.00001 -p invalidproxy
+echo "\$ python3 ../shdl.py https://arxiv.org/nonexistence/doi -v -m sci-hub.st"
+python3 ../shdl.py https://arxiv.org/nonexistence/doi -v -m sci-hub.st
+echo ""
+echo "Waiting for next test"
+echo ""
+sleep 5
+
+echo "\$ python3 ../shdl.py https://arxiv.org/abs/1501.00001 -p invalidproxy -m sci-hub.st"
+python3 ../shdl.py https://arxiv.org/abs/1501.00001 -p invalidproxy -m sci-hub.st
 echo ""
 echo "Waiting for next test"
 echo ""
