@@ -1,6 +1,6 @@
 # shdl
 
-A script to fetch files by their identifiers
+A simple utility to fetch remote files by their identifiers
 
 ## Features
 
