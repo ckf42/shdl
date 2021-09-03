@@ -4,6 +4,5 @@ build-backend = "setuptools.build_meta"
 
 [project]
 dependecies = [
-    'python >= 3.8',
     'requests[socks] ~= 2.26.0'
 ]
