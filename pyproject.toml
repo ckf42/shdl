@@ -3,6 +3,6 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-dependecies = [
+dependencies = [
     'requests[socks] ~= 2.26.0'
 ]
