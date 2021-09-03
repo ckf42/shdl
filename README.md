@@ -17,11 +17,12 @@ To use the script, you will need:
 * [requests package](https://pypi.org/project/requests/ "PyPI page")
 * [PySocks package](https://pypi.org/project/PySocks/ "PyPI page")
 
-To use this script, you need to first install Python, then
+To use this script, you need to first install Python 3.8+, then
 
 * clone this repo and install all dependencies via `pip install --user -r requirements.txt`; or
 * install the pre-built wheel from [release page](https://github.com/ckf42/shdl/releases)
   with `pip --user install shdl.whl`
+* install the pre-built wheel with `pipx install shdl.whl --include-deps`
 
 You can build the wheel yourself with `python -m build` (You may need `pip install -U build` first)
 
