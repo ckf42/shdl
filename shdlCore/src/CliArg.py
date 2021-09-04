@@ -16,7 +16,7 @@ _parser = argparse.ArgumentParser(
 _parser.add_argument(
     "--version", "-V",
     action='version',
-    version="%(prog)s v0.7.2"
+    version="%(prog)s v0.7.3"
 )
 _parser.add_argument(
     "identifier",
