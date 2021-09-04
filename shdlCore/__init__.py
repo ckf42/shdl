@@ -1,4 +1,4 @@
-from shdl.src import *
+from shdlCore.src import *
 
 
 def main():

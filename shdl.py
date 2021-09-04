@@ -4,7 +4,7 @@
 
 if __name__ == '__main__':
     try:
-        from shdl import main
+        from shdlCore import main
 
         main()
     except KeyboardInterrupt:

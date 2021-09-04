@@ -1,4 +1,4 @@
-from shdl import main
+from shdlCore import main
 
 if __name__ == '__main__':
     main()

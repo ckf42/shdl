@@ -1,1 +1,1 @@
-python -m build && pyinstaller --onefile --icon NONE shdl.py
+python -m build && pyinstaller --clean --onefile --icon NONE shdl.py
