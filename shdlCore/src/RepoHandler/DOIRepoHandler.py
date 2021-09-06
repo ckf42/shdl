@@ -11,7 +11,7 @@ from html import unescape, escape
 from unicodedata import category as ud_category
 from unicodedata import name as ud_name
 from xml.etree import ElementTree as eTree
-from typing import Union
+from typing import Union, Callable
 
 from ..CommonUtil import *
 from ._BaseRepoHandler import _BaseRepoHandler
@@ -107,9 +107,11 @@ class DOIRepoHandler(_BaseRepoHandler):
                        "Please report this DOI as a bug")
         return alt_metadata
 
-    def get_download_url(self,
-                         mirror_link,
-                         identifier_override: Optional[str] = None):
+    def get_download_url(
+            self,
+            mirror_link,
+            identifier_override: Optional[str] = None,
+            init_query_method_override: Optional[Callable] = None):
         """
         Get file download link
 
@@ -121,12 +123,17 @@ class DOIRepoHandler(_BaseRepoHandler):
         :param identifier_override: Optional[str].
             The path used for querying mirror.
             If None, will use self.identifier
+        :param init_query_method_override: Optional[Callable]
+            The method used to get the initial query page
+            If None, will use rq.get
         :return: str, or None.
         """
 
         # test mirror
         if identifier_override is None:
             identifier_override = self.identifier
+        if init_query_method_override is None:
+            init_query_method_override = rq.get
         console_print("Checking if mirror "
                       + PColor.PATH(mirror_link)
                       + " is online ...",
@@ -150,7 +157,8 @@ class DOIRepoHandler(_BaseRepoHandler):
         query_url = urljoin(mirror_link, identifier_override)
         console_print("Querying " + PColor.PATH(query_url) + " ...",
                       msg_verbose_level=VerboseLevel.VERBOSE)
-        preview_resp = rq.get(query_url, **cliArg['rqKwargs'])
+        preview_resp = init_query_method_override(query_url,
+                                                  **cliArg['rqKwargs'])
         if (not preview_resp.headers['Content-Type'].startswith('text/html')) \
                 or len(preview_resp.text.strip('\n ')) == 0:
             info_print(PColor.ERROR("ERROR:"), end=" ")

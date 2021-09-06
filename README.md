@@ -29,7 +29,8 @@ You can build the wheel yourself with `python -m build` (You may need `pip insta
 Alternatively, you can use [the standalone executable](https://github.com/ckf42/shdl/releases). It is (currently)
 only available for Windows x64 and is considered experimental. **Use at your own risk**.
 
-To build the standalone executable, install [PyInstaller](https://www.pyinstaller.org/) (and optionally [UPX](https://upx.github.io/)), then execute `pyinstaller --onefile --icon NONE shdl.py`.
+To build the standalone executable, install [PyInstaller](https://www.pyinstaller.org/) (and
+optionally [UPX](https://upx.github.io/)), then execute `pyinstaller --onefile --icon NONE shdl.py`.
 
 ## Usage
 
@@ -160,6 +161,14 @@ If the target document has a DOI, `shdl` will always use it for file fetching.
 
 If the target document has a DOI, `shdl` will always use it for file fetching.
 
+### PMID support
+
+*Experimental*
+
+`shdl "PMID: 23193287"`
+
+`shdl https://pubmed.ncbi.nlm.nih.gov/23193287/`
+
 ## Config file
 
 You can store your default configurations for `shdl` in a UTF-8 encoded text file.
@@ -218,7 +227,6 @@ Listing only the explicit ones
 
 ### Features
 
-* Support for PMID
 * Direct search with e.g. Google Scholar?
 * Better `--autoformat` syntax for flexibility?
 
