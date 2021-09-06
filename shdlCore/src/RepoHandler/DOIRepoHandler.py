@@ -65,7 +65,9 @@ class DOIRepoHandler(_BaseRepoHandler):
                       msg_verbose_level=VerboseLevel.VERBOSE)
         return rq.get(
             'https://doi.org/{id}'.format(id=self.identifier),
-            headers={"Accept": "application/vnd.citationstyles.csl+json"}
+            headers={**cliArg['rqKwargs']['headers'],
+                     "Accept": "application/vnd.citationstyles.csl+json"},
+            proxies=cliArg['rqKwargs']['proxies']
         )
 
     def extract_metadata(self):
@@ -245,7 +247,7 @@ class DOIRepoHandler(_BaseRepoHandler):
         query_url = 'https://www.aimsciences.org/article/doi/{id}'.format(
             id=self.identifier)
         info_print(f"Fetching from {PColor.PATH(query_url)}")
-        aims_resp = rq.get(query_url, headers=cliArg['rqKwargs']['headers'])
+        aims_resp = rq.get(query_url, **cliArg['rqKwargs'])
         # TODO check valid
         aims_internal_id = None
         for line in aims_resp.text.splitlines():
@@ -297,7 +299,7 @@ class DOIRepoHandler(_BaseRepoHandler):
             id=self.identifier)
         console_print(f"Fetching from {PColor.PATH(query_url)}",
                       msg_verbose_level=VerboseLevel.INFO)
-        royal_resp = rq.get(query_url, headers=cliArg['rqKwargs']['headers'])
+        royal_resp = rq.get(query_url, **cliArg['rqKwargs'])
         # PaRsInG HtMl wItH rEgEx !!!1!11!!!
         # TODO need better method
         article_title = (
@@ -341,7 +343,8 @@ class DOIRepoHandler(_BaseRepoHandler):
         """
         # get doc host
         self_host = urlparse(rq.get('https://doi.org/{id}'
-                                    .format(id=self.identifier)).url).netloc
+                                    .format(id=self.identifier),
+                                    **cliArg['rqKwargs']).url).netloc
         console_print(f"Document host: {self_host}",
                       msg_verbose_level=VerboseLevel.VERBOSE)
         metadata_getter_func = {

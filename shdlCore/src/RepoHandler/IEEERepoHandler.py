@@ -33,7 +33,8 @@ class IEEERepoHandler(DOIRepoHandler):
             '&lite=true'.format(id=self.identifier),
             headers={
                 'Referer': 'https://ieeexplore.ieee.org/document/{id}'.format(
-                    id=self.identifier)}
+                    id=self.identifier)},
+            proxies=cliArg['rqKwargs']['proxies']
         )
 
     @classmethod

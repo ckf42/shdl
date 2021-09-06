@@ -38,7 +38,8 @@ class ArxivRepoHandler(_BaseRepoHandler):
         return rq.get(
             'http://export.arxiv.org/api/query?id_list={id}'.format(
                 id=self.identifier
-            )
+            ),
+            **cliArg['rqKwargs']
         )
 
     def extract_metadata(self):

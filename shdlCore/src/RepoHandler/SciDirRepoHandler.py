@@ -46,7 +46,7 @@ class SciDirRepoHandler(DOIRepoHandler):
             '&format=application%2Fx-research-info-systems'
             '&withabstract=false'.format(id=self.identifier,
                                          type=self.doc_type),
-            headers=cliArg['rqKwargs']['headers']
+            **cliArg['rqKwargs']
         )
 
     @classmethod
