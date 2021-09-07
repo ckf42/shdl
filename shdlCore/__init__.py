@@ -3,15 +3,27 @@ from shdlCore.src import *
 
 def main():
     # check repo
+    test_repo_list = registered_repo_list
+    if cliArg['type'] is not None:
+        info_print("Identifier type overridden as "
+                   + PColor.INFO(cliArg['type']))
+        test_repo_list = (registered_repo_list[
+                              registered_repo_name.index(cliArg['type'])],)
+        cliArg['identifier'] = cliArg['type'] + ": " + cliArg['identifier']
     repo_obj = next((obj
-                     for cls in registered_repo_list
+                     for cls in test_repo_list
                      if (obj := cls(cliArg['identifier'])).is_query_valid),
                     None)
     if repo_obj is None:
-        console_print(PColor.WARNING("WARNING:"), end=" ")
-        console_print("Input query format not recognized. "
-                      "Assuming it is sanitized DOI")
-        repo_obj = DOIRepoHandler('doi: ' + cliArg['identifier'])
+        if cliArg['type'] is None:
+            console_print(PColor.WARNING("WARNING:"), end=" ")
+            console_print("Input query format not recognized. "
+                          "Assuming it is sanitized DOI")
+            repo_obj = DOIRepoHandler('doi: ' + cliArg['identifier'])
+        else:
+            quit_with_error(ErrorType.QUERY_INVALID,
+                            error_msg=f"Input identifier is not a valid "
+                                      f"identifier of type {cliArg['type']}")
     info_print(f"Detected identifier type: {PColor.INFO(repo_obj.repo_name)}")
     info_print(f"Sanitized identifier: {PColor.PATH(repo_obj.identifier)}")
 

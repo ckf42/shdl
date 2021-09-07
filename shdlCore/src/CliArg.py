@@ -142,6 +142,16 @@ _parser.add_argument(
          "~/.shdlconfig"
 )
 _parser.add_argument(
+    "--type",
+    type=str,
+    help="The query type of the input indentifier. "
+         "Normally this is detected automatically. "
+         "You can override the detection by specifying the type here. "
+         "If this is used, the input identifier is assumed to contain "
+         "only the identifier part (e.g. 10.XXXX/XXXXXX for DOI). "
+         "Accepted value: doi, arxiv, ieee, jstor, pmid, sciencedirect"
+)
+_parser.add_argument(
     "--verbose", "-v",
     action='count',
     default=0,

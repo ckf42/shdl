@@ -13,3 +13,6 @@ registered_repo_list = [
     IEEERepoHandler,
     PMIDRepoHandler
 ]
+
+registered_repo_name = tuple(cls.repo_name.lower()
+                             for cls in registered_repo_list)

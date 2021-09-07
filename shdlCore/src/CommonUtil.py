@@ -80,7 +80,7 @@ for _k, _v in cliArg.items():
 # do cliArg postprocess
 
 _defaultDict = {
-    # default arguments
+    # default arguments for arg that may be overridden in shdlconfig
     'useragent':  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) '
                   'Gecko/20100101 Firefox/78.0',
     'autoformat': '[{authors}, {repo} {identifier}]{title}',
@@ -261,6 +261,15 @@ except Exception as e:
 else:
     if cliArg['proxy'] is not None:
         info_print(f"Using proxy {cliArg['proxy']['https']}")
+
+if cliArg['type'] is not None:
+    cliArg['type'] = cliArg['type'].lower()
+    from .RepoHandler.RegisteredRepo import registered_repo_name
+
+    if cliArg['type'] not in registered_repo_name:
+        quit_with_error(ErrorType.ARG_INVALID,
+                        error_msg=f"Input type {cliArg['type']} does not "
+                                  "match any known repo name")
 
 console_print("Processed cli arguments: ",
               msg_verbose_level=VerboseLevel.DEBUG)
