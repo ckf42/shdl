@@ -11,26 +11,20 @@ A simple utility to fetch remote files by their identifiers
 
 ## Install
 
-To use the script, you will need:
-
-* Python 3.8+
-* [requests package](https://pypi.org/project/requests/ "PyPI page")
-* [PySocks package](https://pypi.org/project/PySocks/ "PyPI page")
-
-To use this script, you need to first install Python 3.8+, then
+To use this utility, you need to first install Python 3.8+, then
 
 * clone this repo and install all dependencies via `pip install --user -r requirements.txt`; or
 * install the pre-built wheel from [release page](https://github.com/ckf42/shdl/releases)
-  with `pip --user install shdl.whl`
-* install the pre-built wheel with `pipx install shdl.whl --include-deps`
+  with `pip --user install shdl.whl`; or
+* install the pre-built wheel in pipx with `pipx install shdl.whl --include-deps`.
 
-You can build the wheel yourself with `python -m build` (You may need `pip install -U build` first)
+You can build the wheel yourself with `python -m build`.
 
-Alternatively, you can use [the standalone executable](https://github.com/ckf42/shdl/releases). It is (currently)
-only available for Windows x64 and is considered experimental. **Use at your own risk**.
+Alternatively, you can use [the standalone commandline executable](https://github.com/ckf42/shdl/releases). It is (
+currently) only available for Windows x64 and is considered experimental. **Use at your own risk**.
 
-To build the standalone executable, install [PyInstaller](https://www.pyinstaller.org/) (and
-optionally [UPX](https://upx.github.io/)), then execute `pyinstaller --onefile --icon NONE shdl.py`.
+You can build the standalone executable yourself with [PyInstaller](https://www.pyinstaller.org/) (and
+optionally [UPX](https://upx.github.io/)) via `pyinstaller --onefile --icon NONE shdl.py`.
 
 ## Usage
 
@@ -41,6 +35,10 @@ By default, identifier is assumed to be DOI
 Unless `--dir` is specified, file is saved to the current working directory
 
 `shdl 10.1109/5.771073`
+
+You can specify what type of identifier it is
+
+`shdl 10.1109/5.771073 --type doi`
 
 Save document to home directory
 
@@ -216,8 +214,6 @@ when calling `shdl`
 Note that argument for `--dir` is `"~/document directory to save file"`
 
 ## Dependencies
-
-Listing only the explicit ones
 
 * Python 3 (support 3.8, 3.9)
 * [requests](https://pypi.org/project/requests/ "PyPI page") ~= 2.26.0 (Apache 2.0)
