@@ -174,17 +174,18 @@ If the target document has a DOI, `shdl` will always use it for file fetching.
 You can store your default configurations for `shdl` in a UTF-8 encoded text file.
 
 By default, `shdl` will look for `.shdlconfig` at home directory `~` (Windows: `%USERPROFILE%`). You can also specify
-the path to this file with `--config`. To stop looking for `.shdlconfig` file, or simply put an empty string in the
-commandline option (`--config ""`)
+the path to this file with `--config`. To stop `shdl` from looking for `.shdlconfig` file, simply use an empty string
+for config path in the commandline option (`--config ""`).
 
 If this file exists (and can be read), it will be parsed line by line as follows:
 
-* Lines that start with one of these keywords (`proxy`, `mirror`, `dir`, `chunk`, `useragent`, `autoname`
-  , `autoformat`, `nocolor`, case-insensitive) followed by an equal sign `=` are parsed
-    * The remaining portion of the line is taken as parameter.
+* Lines that start with one of the known keywords (`proxy`, `mirror`, `dir`, `chunk`, `useragent`, `autoname`
+  , `autoformat`, `nocolor`, case-insensitive) followed by an equal sign `=` are parsed as follows:
+    * The remaining portion of the line (after the equal sign) is taken as parameter of the switch.
     * If these keywords `proxy`, `dir`, `useragent`, `chunk`, `autoformat` are specified more than once, only the last
       one is used.
-    * If the keyword is `autoname`, `--autoname` will be set (as `True`), ignoring the parameter. Similar for `nocolor`
+    * If the keyword is `autoname` or `nocolor`, the corresponding switch will be set (as `True`), ignoring the parameter.
+        * Specifying these keywords multiple times is the same as specifying only once.
     * `mirror` can be specified multiple times for multiple mirrors.
 * All other lines are ignored.
 
@@ -203,7 +204,7 @@ this line will be ignored
 this=line=will=also=be=ignored
 mirror=first.mirror
 dir=./this_will_not_be_used
-nocolor=this message will be ignored
+nocolor=these words will be ignored
 dir=~/document directory to save file
 mirror=second.mirror
 autoname=these words will be ignored
@@ -211,9 +212,7 @@ autoname=these words will be ignored
 
 is the same as
 specifying `--proxy socks5h://127.0.0.1:9050 --mirror first.mirror --nocolor --dir "~/document directory to save file" --mirror second.mirror --autoname`
-when calling `shdl`
-
-Note that argument for `--dir` is `"~/document directory to save file"`
+when calling `shdl` without specifying any switch.
 
 ## Dependencies
 
@@ -231,7 +230,7 @@ Note that argument for `--dir` is `"~/document directory to save file"`
 ### Usability
 
 * Check if build specs are alright
-* Check why PyInstaller sometimes packs hooks that are not needed (e.g. IPython, matplotlib) and bloats size to ~16MB
+* Specify necessary hooks for PyInstaller to stop bloating output executable size
 
 ### Design
 
