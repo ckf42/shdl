@@ -16,12 +16,14 @@ To use this utility, you need to first install Python 3.8+, then
 * clone this repo and install all dependencies via `pip install --user -r requirements.txt`; or
 * install the pre-built wheel from [release page](https://github.com/ckf42/shdl/releases)
   with `pip --user install shdl.whl`; or
-* install the pre-built wheel in pipx with `pipx install shdl.whl --include-deps`.
+* install the pre-built wheel in [pipx](https://github.com/pypa/pipx) with `pipx install shdl.whl --include-deps`.
+
+The script `shdl.py` (and `shdl.exe` if you use the wheel) should then be usable.
 
 You can build the wheel yourself with `python -m build`.
 
-Alternatively, you can use [the standalone commandline executable](https://github.com/ckf42/shdl/releases). It is (
-currently) only available for Windows x64 and is considered experimental. **Use at your own risk**.
+Alternatively, you can use [the standalone commandline executable](https://github.com/ckf42/shdl/releases). It is 
+(currently) only available for Windows x64 and is considered experimental. **Use at your own risk**.
 
 You can build the standalone executable yourself with [PyInstaller](https://www.pyinstaller.org/) (and
 optionally [UPX](https://upx.github.io/)) via `pyinstaller --onefile --icon NONE shdl.py`.
