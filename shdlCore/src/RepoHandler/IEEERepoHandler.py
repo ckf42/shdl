@@ -39,6 +39,8 @@ class IEEERepoHandler(DOIRepoHandler):
 
     @classmethod
     def _is_meta_query_response_valid(cls, response_obj):
+        console_print("Return status code: " + str(response_obj.status_code),
+                      msg_verbose_level=VerboseLevel.DEBUG)
         return response_obj.status_code == 200 \
                and response_obj.headers['Content-Length'] != 0
 
