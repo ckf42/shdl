@@ -77,7 +77,34 @@ def main():
             error_msg="No known mirror. "
                       "Please specify mirrors with --mirror switch"
         )
-    assert len(repo_obj.mirror_list) != 0
+    # assert len(repo_obj.mirror_list) != 0
+
+    dl_url = None
+    for mirrorURL in repo_obj.mirror_list:
+        dl_url = repo_obj.get_download_url(mirrorURL)
+        if dl_url is None:
+            continue
+        console_print("Download link: " + PColor.PATH(dl_url),
+                      msg_verbose_level=VerboseLevel.VERBOSE)
+        # download
+        if proposed_name is None:
+            proposed_name = dl_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
+        download_path = cliArg['dir'] / (
+                proposed_name + '.' + dl_url.rsplit('.', 1)[-1])
+        console_print("Download path: " + PColor.PATH(str(download_path)),
+                      msg_verbose_level=VerboseLevel.VERBOSE)
+        if not fetch_url_to_local_path(dl_url, download_path):
+            console_print(PColor.ERROR("ERROR"), end=": ")
+            console_print(f"Failed to download file from {mirrorURL}")
+        else:
+            quit_with_error(ErrorType.SUCCEED)
+
+    if dl_url is None:
+        pass
+    else:
+        quit_with_error(ErrorType.OUTPUT_ERROR,
+                        error_msg="Failed to download file ")
+
     dl_url = next(
         (lnk
          for mirrorURL in repo_obj.mirror_list
