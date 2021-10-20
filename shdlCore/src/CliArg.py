@@ -132,8 +132,8 @@ _parser.add_argument(
     default='~/.shdlconfig',
     help="The path to the config file. "
          "If the file exists and readable, "
-         "the following configs will be overridden "
-         "from file (instead of the CLI argument) "
+         "the following configs will have their"
+         "default values read from this file"
          "if they are present: "
          "proxy, mirror, dir, chunk, useragent, "
          "autoname, autoformat, nocolor. "
