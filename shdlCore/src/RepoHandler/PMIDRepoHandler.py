@@ -19,8 +19,9 @@ class PMIDRepoHandler(DOIRepoHandler):
         if match_gp:
             return match_gp.group(5)
         else:
-            info_print(f"{PColor.WARNING('Failed')} parsing identifier as "
-                       f"type {PColor.INFO(cls.repo_name)}")
+            console_print(f"{PColor.WARNING('Failed')} parsing identifier as "
+                          f"type {PColor.INFO(cls.repo_name)}",
+                          msg_verbose_level=VerboseLevel.VERBOSE)
             return None
 
     def get_metadata_response(self):

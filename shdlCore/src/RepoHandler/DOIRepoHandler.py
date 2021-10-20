@@ -49,15 +49,16 @@ class DOIRepoHandler(_BaseRepoHandler):
         if match_gp:
             return match_gp.group(9)
         else:
-            info_print(f"{PColor.WARNING('Failed')} parsing identifier as "
-                       f"type {PColor.INFO(cls.repo_name)}")
+            console_print(f"{PColor.WARNING('Failed')} parsing identifier as "
+                          f"type {PColor.INFO(cls.repo_name)}",
+                          msg_verbose_level=VerboseLevel.VERBOSE)
             return None
 
     @classmethod
     def _is_meta_query_response_valid(cls, response_obj):
         return response_obj.status_code == 200 \
-               and response_obj.headers['content-type'] \
-               == 'application/vnd.citationstyles.csl+json'
+               and response_obj.headers['content-type'].startswith(
+            'application/vnd.citationstyles.csl+json')
 
     def get_metadata_response(self):
         console_print(f"{PColor.INFO('Fetching metadata')} "
@@ -85,10 +86,13 @@ class DOIRepoHandler(_BaseRepoHandler):
                           for c in re_sub('</?.+?>',
                                           '',
                                           unescape(meta_json_dict['title'])))
-            publish_year = str(''
-                               if (pDict := meta_json_dict
-                                   .get('published-print', None)) is None
-                               else pDict.get('date-parts', [['']])[0][0])
+            publish_year = str(
+                meta_json_dict.get('issued',
+                                   {}).get('date-parts',
+                                           [['']])[0][0]
+                if (pDict := meta_json_dict
+                    .get('published-print', None)) is None
+                else pDict.get('date-parts', [['']])[0][0])
             return {
                 'author': tuple({k: aDict[k].strip()
                                  for k in ('given', 'family')}
