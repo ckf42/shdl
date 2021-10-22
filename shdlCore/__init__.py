@@ -77,7 +77,8 @@ def main():
             error_msg="No known mirror. "
                       "Please specify mirrors with --mirror switch"
         )
-    assert len(repo_obj.mirror_list) != 0
+    # assert len(repo_obj.mirror_list) != 0
+
     dl_url = next(
         (lnk
          for mirrorURL in repo_obj.mirror_list

@@ -24,7 +24,7 @@ class _BaseRepoHandler(ABC):
         self.is_query_valid = (self.identifier is not None)
         if not self.is_query_valid:
             return
-        console_print(f"{PColor.INFO('Fetching metadata')} response",
+        console_print(PColor.INFO("Fetching metadata response"),
                       msg_verbose_level=VerboseLevel.DEBUG)
         self.metadata_response = self.get_metadata_response()
         console_print("Extracting metadata",

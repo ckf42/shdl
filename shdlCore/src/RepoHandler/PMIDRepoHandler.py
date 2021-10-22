@@ -8,7 +8,7 @@ from .DOIRepoHandler import DOIRepoHandler
 class PMIDRepoHandler(DOIRepoHandler):
     repo_name = "PMID"
     query_extract_pattern \
-        = r'^(https?://)?(pubmed\.ncbi\.nlm\.nih\.gov|pmid:?)\s*/?(\d+)/?$'
+        = r'^(https?://)?((pubmed|www)\.ncbi\.nlm\.nih\.gov(/pubmed)?|pmid:?)\s*/?(\d+)/?$'
     mirror_list = cliArg['mirror']
 
     @classmethod
@@ -17,10 +17,11 @@ class PMIDRepoHandler(DOIRepoHandler):
                             raw_query_str,
                             flags=IGNORECASE)
         if match_gp:
-            return match_gp.group(3)
+            return match_gp.group(5)
         else:
-            info_print(f"{PColor.WARNING('Failed')} parsing identifier as "
-                       f"type {PColor.INFO(cls.repo_name)}")
+            console_print(f"{PColor.WARNING('Failed')} parsing identifier as "
+                          f"type {PColor.INFO(cls.repo_name)}",
+                          msg_verbose_level=VerboseLevel.VERBOSE)
             return None
 
     def get_metadata_response(self):
@@ -47,8 +48,6 @@ class PMIDRepoHandler(DOIRepoHandler):
         if not self._is_meta_query_response_valid(self.metadata_response):
             info_print(f"Response is not a valid {self.repo_name} response")
             return False
-        # json_obj = self.metadata_response.json()['result']
-        # json_obj = json_obj[json_obj['uids'][0]]
         json_obj = (lambda x: x[x['uids'][0]])(
             self.metadata_response.json()['result'])
         doc_title = json_obj.get('title', None)

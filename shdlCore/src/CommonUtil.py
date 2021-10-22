@@ -1,7 +1,7 @@
 from enum import Enum, IntEnum, unique
 from typing import Optional, NoReturn
 from pathlib import Path
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse, unquote
 
 import requests as rq
 
@@ -197,7 +197,7 @@ def quit_with_error(with_this_code: ErrorType = ErrorType.SUCCEED,
 # start checking parameters validity
 console_print("Start checking cli arguments",
               msg_verbose_level=VerboseLevel.DEBUG)
-
+cliArg['identifier'] = unquote(cliArg['identifier'])
 assert isinstance(cliArg['dir'], str)
 try:
     cliArg['dir'] = (

@@ -94,9 +94,9 @@ _stopword_list = (
     'further', 'had', 'has', 'have', 'having', 'here', 'how', 'if', 'in',
     'into', 'is', 'just', 'more', 'most', 'no', 'nor', 'not', 'now', 'of',
     'off', 'on', 'once', 'only', 'or', 'other', 'out', 'over', 'own', 's',
-    'same', 'should', 'so', 'some', 'such', 't', 'than', 'that', 'the',
-    'then', 'there', 'these', 'this', 'those', 'through', 'to', 'too',
-    'under', 'until', 'up', 'very', 'was', 'were', 'what', 'when', 'where',
+    'same', 'should', 'so', 'some', 'such', 't', 'than', 'that', 'the', 'then',
+    'there', 'these', 'this', 'those', 'through', 'to', 'too', 'under',
+    'until', 'up', 'using', 'very', 'was', 'were', 'what', 'when', 'where',
     'which', 'while', 'who', 'whom', 'why', 'will', 'with', 'without',
 )
 

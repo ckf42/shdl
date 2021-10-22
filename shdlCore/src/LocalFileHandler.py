@@ -54,6 +54,7 @@ def _download_file_to_local(target_url: str,
         return True
     downloaded_size = 0
     last_line_len = 0
+    file_size = None
     dl_msg = None
     # console_print(f"Downloading from {PColor.PATH(target_url)} ...",
     #               msg_verbose_level=VerboseLevel.VERBOSE)
@@ -83,6 +84,15 @@ def _download_file_to_local(target_url: str,
                 len_dl_msg = len(dl_msg)
                 console_print(" " * (last_line_len - len_dl_msg), end="\r")
                 last_line_len = len_dl_msg
+    if file_size is not None and file_size != downloaded_size:
+        info_print(PColor.WARNING("WARNING: ")
+                   + "Download ended but with a "
+                   + ("smaller" if downloaded_size < file_size else "larger")
+                   + " file size ("
+                   + human_byte_unit_string(downloaded_size)
+                   + ") than excepted. "
+                   + "File may be corrupted. ")
+        return False
     console_print(f"\n{PColor.INFO('Download done')}")
     return True
 
