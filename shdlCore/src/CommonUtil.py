@@ -227,10 +227,16 @@ else:
         for mirrorURL in cliArg['mirror']
     )
 
-cliArg['proxy'] = {scheme: cliArg['proxy'] for scheme in ('http', 'https')} \
-    if cliArg['proxy'] is not None and cliArg['proxy'] != '' \
-    else None
-if cliArg['proxy'] is None:
+if cliArg['proxy'] == '':
+    cliArg['proxy'] = None
+if cliArg['proxy'] is not None:
+    # handle string literal
+    cliArg['proxy'] = {
+        'tbb': 'socks5h://127.0.0.1:9150',
+        'tor': 'socks5h://127.0.0.1:9050'
+    }.get(cliArg['proxy'], cliArg['proxy'])
+    cliArg['proxy'] = {scheme: cliArg['proxy'] for scheme in ('http', 'https')}
+else:
     console_print(PColor.WARNING.__call__("WARNING:"), end=" ",
                   msg_verbose_level=VerboseLevel.INFO)
     console_print("No proxy configured",
