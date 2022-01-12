@@ -83,7 +83,8 @@ class DOIRepoHandler(_BaseRepoHandler):
         meta_json_dict = self.metadata_response.json()
         if all(k in meta_json_dict for k in ('author', 'title')) \
                 and all(all(k in aDict for k in ('given', 'family'))
-                        for aDict in meta_json_dict['author']):
+                        for aDict in meta_json_dict['author']) \
+                and type(meta_json_dict['title']) is str:
             doc_title \
                 = ''.join((f' {ud_name(c).title()}'
                            if not c.isascii() and ud_category(c) == 'Sm'
@@ -206,6 +207,8 @@ class DOIRepoHandler(_BaseRepoHandler):
             possible_link = possible_link[:1]
         return possible_link[0]
 
+    # TODO simplify alt methods?
+
     def alt_extract_metadata_jstor(self) -> Union[bool, dict, None]:
         """
         Alternative method to get metadata from JSTOR.
@@ -221,7 +224,7 @@ class DOIRepoHandler(_BaseRepoHandler):
         jstor_resp = rq.get(query_url, **cliArg['rqKwargs'])
         self.metadata_response = jstor_resp
         if jstor_resp.status_code == 200 \
-                and jstor_resp.headers['Content-Type'] \
+                and jstor_resp.headers['Content-Type'].lower() \
                 .startswith('application/x-research-info-systems'):
             auth_list = list()
             doc_title = None
@@ -351,6 +354,54 @@ class DOIRepoHandler(_BaseRepoHandler):
             # even webpage record is incomplete
             return None
 
+    def alt_extract_metadata_springer(self) -> Union[bool, dict, None]:
+        """
+        Alternative method to get metadata from Springer.
+        Also set self.metadata_response
+
+        :return: bool (False), None or dict.
+            Same as self.extract_metadata
+        """
+        query_url = ('https://citation-needed.springer.com/v2/'
+                     'references/{id}?format=refman&flavour=citation').format(
+            id=self.identifier)
+        console_print(f"Fetching from {PColor.PATH(query_url)}",
+                      msg_verbose_level=VerboseLevel.INFO)
+        springer_resp = rq.get(query_url, **cliArg['rqKwargs'])
+        self.metadata_response = springer_resp
+        if springer_resp.status_code == 200 \
+                and springer_resp.headers['Content-Type'].lower() \
+                .startswith('application/x-research-info-systems'):
+            auth_list = list()
+            doc_title = None
+            publish_year = ''
+            for line in springer_resp.text.splitlines():
+                if line.startswith('AU  -'):  # author line
+                    auth_list.append(line[6:])
+                elif line.startswith('TI  -'):  # title line
+                    doc_title = line[6:]
+                elif line.startswith('PY  - '):  # publish year
+                    publish_year = line[6:]
+            if len(auth_list) != 0 and doc_title is not None:
+                # able to get the needed information
+                return {
+                    # not sure if RIS always put family name first
+                    # may have seen counter-example?
+                    'author': tuple(dict(zip(('family', 'given'),
+                                             aItem.strip().rsplit(', ', 1)))
+                                    for aItem in auth_list),
+                    'title':  doc_title,
+                    'year':   publish_year,
+                }
+            else:
+                # even citation record is incomplete
+                return None
+        else:
+            info_print(PColor.ERROR("ERROR:"), end=" ")
+            info_print("Unable to fetch metadata from Springer. "
+                       "Maybe Springer blocked the requests?")
+            return False
+
     def alt_extract_metadata(self) -> Union[bool, dict, None]:
         """
         Alternative method to get metadata.
@@ -369,11 +420,12 @@ class DOIRepoHandler(_BaseRepoHandler):
             'www.aimsciences.org': self.alt_extract_metadata_aims,
             'royalsocietypublishing.org':
                                    self.alt_extract_metadata_royalsocpub,
+            'link.springer.com':   self.alt_extract_metadata_springer,
         }.get(self_host, None)
         if metadata_getter_func is None:
             info_print(PColor.ERROR("ERROR:"), end=" ")
             info_print(f"{self_host} is not a recognized host. "
-                       "Please report this on main page")
+                       "Please report this on repo page")
             return False
         else:
             return metadata_getter_func()
