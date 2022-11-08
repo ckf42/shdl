@@ -230,13 +230,15 @@ else:
 if cliArg['proxy'] == '':
     cliArg['proxy'] = None
 if cliArg['proxy'] is not None:
-    # handle string literal
     cliArg['proxy'] = {
-        'tbb': 'socks5h://127.0.0.1:9150',
-        'tor': 'socks5h://127.0.0.1:9050'
-    }.get(cliArg['proxy'], cliArg['proxy'])
-    cliArg['proxy'] = {scheme: cliArg['proxy'] for scheme in ('http', 'https')}
-else:
+            'nop': None,
+            'tor': 'socks5h://127.0.0.1:9050',
+            'tbb': 'socks5h://127.0.0.1:9150',
+        }.get(cliArg['proxy'].lower(), cliArg['proxy'])
+    cliArg['proxy'] = { scheme: cliArg['proxy'] for scheme in ('http', 'https') } \
+        if cliArg['proxy'] is not None \
+        else None
+if cliArg['proxy'] is None:
     console_print(PColor.WARNING.__call__("WARNING:"), end=" ",
                   msg_verbose_level=VerboseLevel.INFO)
     console_print("No proxy configured",
