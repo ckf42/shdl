@@ -184,11 +184,14 @@ class DOIRepoHandler(_BaseRepoHandler):
                     .link_extractor.search(line, IGNORECASE)) is not None:
                 console_print(f"Line with possible link: {PColor.INFO(line)}",
                               msg_verbose_level=VerboseLevel.DETAIL)
-                dl_url = urlunparse(
-                    urlparse(match_obj.group(1)
+                dl_url = urlparse(match_obj.group(1)
                              .rsplit('#', 1)[0]  # rm fragment
                              .replace(r'\/', '/'),  # unescape \/
-                             scheme='https'))  # force scheme if missing
+                             scheme='https')  # force scheme if missing
+                # hotfix: deal with relative url
+                if dl_url.netloc == '':
+                    dl_url = dl_url._replace(netloc=urlparse(mirror_link).netloc)
+                dl_url = urlunparse(dl_url)
                 console_print("Link found: " + PColor.PATH(dl_url),
                               msg_verbose_level=VerboseLevel.VERBOSE)
                 possible_link.append(dl_url)

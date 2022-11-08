@@ -227,6 +227,11 @@ else:
         for mirrorURL in cliArg['mirror']
     )
 
+cliArg['proxy'] = {
+            'nop': None,
+            'tor': 'socks5h://127.0.0.1:9050',
+            'tbb': 'socks5h://127.0.0.1:9150',
+        }.get(cliArg['proxy'].lower(), cliArg['proxy'])
 cliArg['proxy'] = {scheme: cliArg['proxy'] for scheme in ('http', 'https')} \
     if cliArg['proxy'] is not None and cliArg['proxy'] != '' \
     else None

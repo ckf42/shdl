@@ -32,8 +32,11 @@ _parser.add_argument(
     type=str,
     help="Requests-type proxy argument. "
          "Used for both HTTP and HTTPS. "
-         "Use socks5h://127.0.0.1:9150 "
-         "for TOR browser socks5 proxy. "
+         "Use socks5h://127.0.0.1:9150 or tbb "
+         "for TOR browser socks5 proxy, "
+         "or socks5h://127.0.0.1:9050 or tor "
+         "for standalone TOR socks5 proxy (if running). "
+         "Accept key nop for no proxy. "
          "Default: "
          "no proxy"
 )
@@ -157,4 +160,6 @@ _parser.add_argument(
     default=0,
     help="Display verbose information"
 )
+
+
 cliArg = vars(_parser.parse_args())
