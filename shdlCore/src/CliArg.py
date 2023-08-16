@@ -130,6 +130,13 @@ _parser.add_argument(
          "download the file"
 )
 _parser.add_argument(
+    "--metaonly",
+    action='store_true',
+    help="Only fetch metadataf (and possibly make autoname). "
+    "Do not do anything else. "
+    "Useful when you only need to check file existence or get autoname"
+)
+_parser.add_argument(
     "--config",
     type=str,
     default='~/.shdlconfig',

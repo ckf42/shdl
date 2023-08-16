@@ -2,6 +2,8 @@
 
 A simple utility to fetch remote files by their identifiers
 
+**PENDING REWRITE** Will rewrite this someday
+
 ## Features
 
 * Fetch documents by their identifiers from online mirrors

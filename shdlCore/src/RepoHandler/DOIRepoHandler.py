@@ -70,7 +70,7 @@ class DOIRepoHandler(_BaseRepoHandler):
                       f"for type {PColor.INFO(self.repo_name)}...",
                       msg_verbose_level=VerboseLevel.VERBOSE)
         return rq.get(
-            'https://doi.org/{id}'.format(id=self.identifier),
+            'http://doi.org/{id}'.format(id=self.identifier),
             headers={**cliArg['rqKwargs']['headers'],
                      "Accept": "application/vnd.citationstyles.csl+json"},
             proxies=cliArg['rqKwargs']['proxies']
@@ -149,18 +149,21 @@ class DOIRepoHandler(_BaseRepoHandler):
                       + " is online ...",
                       msg_verbose_level=VerboseLevel.VERBOSE)
         try:
-            if rq.get(mirror_link, **cliArg['rqKwargs']).status_code != 200:
-                raise rq.exceptions.ConnectionError
+            if (res := rq.get(mirror_link, **cliArg['rqKwargs'])).status_code != 200:
+                raise rq.exceptions.ConnectionError(res)
         except (rq.exceptions.MissingSchema,
                 rq.exceptions.InvalidSchema,
                 rq.exceptions.InvalidURL):
             info_print(PColor.ERROR("ERROR:"), end=" ")
             info_print(f"{mirror_link} does not seem valid")
             return None
-        except rq.exceptions.ConnectionError:
+        except rq.exceptions.ConnectionError as e:
             info_print(PColor.ERROR("ERROR:"), end=" ")
-            info_print(f"Cannot connect to {mirror_link}. "
-                       "Maybe it is not online (for you)?")
+            if b'ddos' in e.args[0].content:
+                info_print(f"Cannot bypass DDOS-Guard to {mirror_link}")
+            else:
+                info_print(f"Cannot connect to {mirror_link}. "
+                           "Maybe it is down (for you)?")
             return None
 
         # query mirror
@@ -267,10 +270,10 @@ class DOIRepoHandler(_BaseRepoHandler):
         :return: bool (False), None or dict.
             Same as self.extract_metadata
         """
-        query_url = 'https://www.aimsciences.org/article/doi/{id}'.format(
+        query_url = 'http://www.aimsciences.org/article/doi/{id}'.format(
             id=self.identifier)
         info_print(f"Fetching from {PColor.PATH(query_url)}")
-        aims_resp = rq.get(query_url, **cliArg['rqKwargs'])
+        aims_resp = rq.get(query_url, verify=False, **cliArg['rqKwargs'])
         # TODO check valid
         aims_internal_id = None
         for line in aims_resp.text.splitlines():
@@ -287,6 +290,7 @@ class DOIRepoHandler(_BaseRepoHandler):
             'https://www.aimsciences.org/article/'
             'exportXML?ids={id}&downType=XML'.format(
                 id=aims_internal_id),
+            verify=False,
             **cliArg['rqKwargs']
         )
         self.metadata_response = xml_resp
@@ -413,7 +417,7 @@ class DOIRepoHandler(_BaseRepoHandler):
             Same as self.extract_metadata
         """
         # get doc host
-        self_host = urlparse(rq.get('https://doi.org/{id}'
+        self_host = urlparse(rq.get('http://doi.org/{id}'
                                     .format(id=self.identifier),
                                     **cliArg['rqKwargs']).url).netloc
         console_print(f"Document host: {self_host}",

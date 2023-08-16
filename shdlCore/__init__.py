@@ -70,6 +70,10 @@ def main():
                 console_print("Proposed name: " + PColor.PATH(proposed_name),
                               msg_verbose_level=VerboseLevel.VERBOSE)
 
+    # metaonly early break
+    if cliArg['metaonly']:
+        quit_with_error(ErrorType.SUCCEED)
+
     # get download link
     if len(repo_obj.mirror_list) == 0:
         quit_with_error(
