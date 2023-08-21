@@ -1,6 +1,7 @@
 import requests as rq
 from pathlib import Path
 from typing import BinaryIO, Union
+from time import monotonic
 
 from .CommonUtil import *
 
@@ -68,17 +69,32 @@ def _download_file_to_local(target_url: str,
         else:
             file_size = int(file_size)
             console_print("File size: " + human_byte_unit_string(file_size))
+        accum_time: float = 0.0
+        accum_size: float = 0.0
+        curr_speed_str: str = 'infinite B/s'
+        checkpt_time: float = monotonic()
+        download_init_time: float = checkpt_time
         with local_file_handle:
             for data_chunk in dl_res.iter_content(chunk_size=cliArg['chunk']):
                 local_file_handle.write(data_chunk)
                 downloaded_size += len(data_chunk)
+                accum_time = monotonic() - checkpt_time
+                accum_size += len(data_chunk)
+                if accum_time > 0.1:
+                    # compute speed and clear accum
+                    curr_speed_str = f"{human_byte_unit_string(accum_size / accum_time)}/s"
+                    checkpt_time += accum_time
+                    accum_size = 0.0
+                    accum_time = 0.0
                 if file_size is None:
                     dl_msg = "Downloaded " \
-                             + human_byte_unit_string(downloaded_size)
+                             + human_byte_unit_string(downloaded_size) \
+                             + f" ({curr_speed_str})"
                 else:
                     dl_msg = "Download " \
                              f"{downloaded_size / file_size * 100 :.2f}% " \
-                             f"({human_byte_unit_string(downloaded_size)})"
+                             f"({human_byte_unit_string(downloaded_size)}, " \
+                             f"{curr_speed_str})"
                 console_print(dl_msg, end="\x1b[0K\r")
     if file_size is not None and file_size != downloaded_size:
         info_print(PColor.WARNING("WARNING: ")
@@ -90,6 +106,8 @@ def _download_file_to_local(target_url: str,
                    + "File may be corrupted. ")
         return False
     console_print(f"\n{PColor.INFO('Download done')}")
+    stat_str: str = f"Total time: {monotonic() - download_init_time:.2f}s"
+    console_print(PColor.INFO(stat_str), msg_verbose_level=VerboseLevel.VERBOSE)
     return True
 
 

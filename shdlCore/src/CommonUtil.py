@@ -1,5 +1,5 @@
 from enum import Enum, IntEnum, unique
-from typing import Optional, NoReturn
+from typing import Optional, NoReturn, Union
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse, unquote
 
@@ -41,14 +41,14 @@ def info_print(msg: str, *args, **kwargs):
     console_print(msg, msg_verbose_level=VerboseLevel.INFO, *args, **kwargs)
 
 
-def human_byte_unit_string(size_byte: int) -> str:
+def human_byte_unit_string(size_byte: Union[int, float]) -> str:
     # assuming less than 1 GB
     if (val := size_byte / 1024 ** 2) >= 1:
         return f"{val :.2f} MB"
     elif (val := size_byte / 1024) >= 1:
         return f"{val :.2f} KB"
     else:
-        return f"{size_byte} B"
+        return f"{size_byte:.0f} B"
 
 
 @unique
