@@ -11,7 +11,7 @@ from html import unescape, escape
 from unicodedata import category as ud_category
 from unicodedata import name as ud_name
 from xml.etree import ElementTree as eTree
-from typing import Union, Callable
+from typing import Union, Callable, Optional
 
 from ..CommonUtil import *
 from ._BaseRepoHandler import _BaseRepoHandler
@@ -25,11 +25,17 @@ class DOIRepoHandler(_BaseRepoHandler):
            r'(:|/)?\s*(.+)$')
     mirror_list = cliArg['mirror']
 
-    # TODO change into a class property?
-    link_extractor = re_compile(
-        "\"location\\.href=.?'(.+?)\\?.*?download=true",
-        flags=IGNORECASE
-    )
+    # this should be able to parse usual mirror for download link in href
+    @classmethod
+    def parse_query_res(cls, lineOfText: str) -> Optional[str]:
+        for pattern in (
+                "\"location\\.href=.?'(.+?)\\?.*?download=true",
+                "<a href=\"(.+?)\">GET</a>"
+                ):
+            if (match_obj := re_search(pattern, lineOfText, IGNORECASE)) is not None:
+                return match_obj.group(1)
+        return None
+
     aims_extractor = re_compile(
         '^\\s*<meta name="citation_pdf_url" '
         'content="https://www\\.aimsciences\\.org/article/'
@@ -149,7 +155,8 @@ class DOIRepoHandler(_BaseRepoHandler):
                       + " is online ...",
                       msg_verbose_level=VerboseLevel.VERBOSE)
         try:
-            if (res := rq.get(mirror_link, **cliArg['rqKwargs'])).status_code != 200:
+            if (res := rq.get(urljoin(mirror_link, '/'),
+                              **cliArg['rqKwargs'])).status_code != 200:
                 raise rq.exceptions.ConnectionError(res)
         except (rq.exceptions.MissingSchema,
                 rq.exceptions.InvalidSchema,
@@ -184,11 +191,10 @@ class DOIRepoHandler(_BaseRepoHandler):
         possible_link = list()
         for line in preview_resp.text.splitlines():
             line = unescape(line).strip()
-            if (match_obj := self
-                    .link_extractor.search(line, IGNORECASE)) is not None:
+            if (parsedLink := self.parse_query_res(line)) is not None:
                 console_print(f"Line with possible link: {PColor.INFO(line)}",
                               msg_verbose_level=VerboseLevel.DETAIL)
-                dl_url = urlparse(match_obj.group(1)
+                dl_url = urlparse(parsedLink
                              .rsplit('#', 1)[0]  # rm fragment
                              .replace(r'\/', '/'),  # unescape \/
                              scheme='https')  # force scheme if missing
