@@ -37,9 +37,9 @@ class DOIRepoHandler(_BaseRepoHandler):
         return None
 
     aims_extractor = re_compile(
-        '^\\s*<meta name="citation_pdf_url" '
-        'content="https://www\\.aimsciences\\.org/article/'
-        'exportPdf\\?id=(.+?)"/>\\s*$',
+        '^\\s*<meta name="citation_pdf_url"\\s+'
+        'content="https?://www\\.aimsciences\\.org/[^>]*?'
+        '\\?id=([0-9a-f\\-]+?)"/>\\s*$',
         flags=IGNORECASE
     )
     aims_xml_sanitizer = re_compile('\\s*<(.+?)>(.+?)</\\1>\\s*',
@@ -53,6 +53,8 @@ class DOIRepoHandler(_BaseRepoHandler):
                             raw_query_str,
                             flags=IGNORECASE)
         if match_gp:
+            console_print(PColor.INFO('Splitted groups') + ": " + str(match_gp.groups()),
+                          msg_verbose_level=VerboseLevel.DEBUG)
             return match_gp.group(9)
         else:
             console_print(f"{PColor.WARNING('Failed')} parsing identifier as "
@@ -279,12 +281,21 @@ class DOIRepoHandler(_BaseRepoHandler):
         query_url = 'http://www.aimsciences.org/article/doi/{id}'.format(
             id=self.identifier)
         info_print(f"Fetching from {PColor.PATH(query_url)}")
-        aims_resp = rq.get(query_url, verify=False, **cliArg['rqKwargs'])
+        aims_resp = rq.get(query_url, **cliArg['rqKwargs'])
+        console_print(f"{aims_resp.content=}",
+                      msg_verbose_level=VerboseLevel.DETAIL)
         # TODO check valid
         aims_internal_id = None
+        aims_pub_id = None
+        pubid_extractor = re_compile(
+                r'^\s*<input [^>]*(?:id|name)="publisherId" [^>]*?value="(.*?)">',
+                flags=IGNORECASE)
         for line in aims_resp.text.splitlines():
             if (match_obj := self.aims_extractor.search(line)) is not None:
                 aims_internal_id = match_obj.group(1)
+            if (match_obj := pubid_extractor.search(line)) is not None:
+                aims_pub_id = match_obj.group(1)
+            if all(x is not None for x in (aims_internal_id, aims_pub_id)):
                 break
         if aims_internal_id is None:
             info_print(PColor.ERROR("ERROR:"), end=" ")
@@ -293,12 +304,13 @@ class DOIRepoHandler(_BaseRepoHandler):
         console_print(f"AIMS ID: {aims_internal_id}",
                       msg_verbose_level=VerboseLevel.VERBOSE)
         xml_resp = rq.get(
-            'https://www.aimsciences.org/article/'
-            'exportXML?ids={id}&downType=XML'.format(
-                id=aims_internal_id),
-            verify=False,
+            'http://www.aimsciences.org/data/article/'
+            'export-xml?ids={id}&publisherId={pubId}'.format(
+                id=aims_internal_id,
+                pubId=aims_pub_id),
             **cliArg['rqKwargs']
         )
+        assert xml_resp.status_code == 200, "Failed to retrive xml"
         self.metadata_response = xml_resp
         # TODO check valid
         xml_root = eTree.fromstring(
@@ -313,7 +325,9 @@ class DOIRepoHandler(_BaseRepoHandler):
                             for aItem
                             in xml_root
                             .findall('record/authors/author/name')),
-            'title':  xml_root.find('record/title').text.strip(),
+            'title':  next(t
+                for tItem in xml_root.findall('record/title')
+                if len((t := tItem.text.strip())) != 0),
             'year':   (''
                        if (pDate := xml_root
                            .find('record/publicationDate')) is None

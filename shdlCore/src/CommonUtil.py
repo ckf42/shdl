@@ -243,15 +243,26 @@ if cliArg['proxy'] is None:
                   msg_verbose_level=VerboseLevel.INFO)
     console_print("No proxy configured",
                   msg_verbose_level=VerboseLevel.INFO)
+if cliArg['pem'] is None:
+    cliArg['pem'] = not cliArg['insecure']
+else:
+    cliArg['pem'] = Path(cliArg['pem']).expanduser().resolve()
+    if not (cliArg['verify'].is_file() and cliArg['verify'].suffix == '.pem'):
+        console_print(PColor.WARNING.__call__("WARNING:"), end=" ",
+                    msg_verbose_level=VerboseLevel.PRINT)
+        console_print("Argument for --pem is not a valid file. Argument ignored.",
+                    msg_verbose_level=VerboseLevel.PRINT)
+        cliArg['pem'] = True
 
 # network para
 cliArg['rqKwargs'] = {
     'proxies': cliArg['proxy'],
-    'headers': {'User-Agent': cliArg['useragent'], }
+    'headers': {'User-Agent': cliArg['useragent'], },
+    'verify': cliArg['pem']
 }
 info_print("Testing network connectivity ...")
 try:
-    rq.get('https://example.com/', **cliArg['rqKwargs'])
+    rq.get('http://example.com/', **cliArg['rqKwargs'])
 except rq.exceptions.ProxyError:
     quit_with_error(ErrorType.ARG_INVALID,
                     error_msg="Proxy config is invalid")
@@ -270,6 +281,11 @@ else:
     if cliArg['proxy'] is not None:
         info_print(f"Using proxy {cliArg['proxy']['https']}")
 
+if cliArg['nometa']:
+    assert cliArg['type'] is not None, "--type not specified"
+    assert not cliArg['metaonly'], "Cannot specify --metaonly and --nometa together"
+    cliArg['autoname'] = False
+
 if cliArg['type'] is not None:
     cliArg['type'] = cliArg['type'].lower()
     from .RepoHandler.RegisteredRepo import registered_repo_name
@@ -278,6 +294,7 @@ if cliArg['type'] is not None:
         quit_with_error(ErrorType.ARG_INVALID,
                         error_msg=f"Input type {cliArg['type']} does not "
                                   "match any known repo name")
+
 
 console_print("Processed cli arguments: ",
               msg_verbose_level=VerboseLevel.DEBUG)

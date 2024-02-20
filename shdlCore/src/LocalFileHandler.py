@@ -62,6 +62,9 @@ def _download_file_to_local(target_url: str,
         if dl_res.status_code != 200:
             console_print("Failed to download from "
                           f"target path {PColor.PATH(target_url)}")
+            console_print(f"Status code: {dl_res.status_code}, " \
+                          f"reason: {PColor.WARNING(dl_res.reason)}",
+                          msg_verbose_level=VerboseLevel.VERBOSE)
             return False
         file_size = dl_res.headers.get('Content-Length', None)
         if file_size is None:
@@ -71,6 +74,7 @@ def _download_file_to_local(target_url: str,
             console_print("File size: " + human_byte_unit_string(file_size))
         accum_time: float = 0.0
         accum_size: float = 0.0
+        curr_speed: float = 0.0
         curr_speed_str: str = 'infinite B/s'
         checkpt_time: float = monotonic()
         download_init_time: float = checkpt_time
@@ -80,9 +84,12 @@ def _download_file_to_local(target_url: str,
                 downloaded_size += len(data_chunk)
                 accum_time = monotonic() - checkpt_time
                 accum_size += len(data_chunk)
+                console_print(f"{accum_size=:.0f}B, {accum_time=:.3f}s",
+                              msg_verbose_level=VerboseLevel.DEBUG)
                 if accum_time > 0.1:
                     # compute speed and clear accum
-                    curr_speed_str = f"{human_byte_unit_string(accum_size / accum_time)}/s"
+                    curr_speed_str = f"{human_byte_unit_string(curr_speed)}/s"
+                    curr_speed = accum_size / accum_time
                     checkpt_time += accum_time
                     accum_size = 0.0
                     accum_time = 0.0
@@ -91,10 +98,14 @@ def _download_file_to_local(target_url: str,
                              + human_byte_unit_string(downloaded_size) \
                              + f" ({curr_speed_str})"
                 else:
+                    remainTimeStr: str = 'infinite s' \
+                            if curr_speed == 0.0 \
+                            else f"{(file_size - downloaded_size) / curr_speed:.2f}"
                     dl_msg = "Download " \
                              f"{downloaded_size / file_size * 100 :.2f}% " \
                              f"({human_byte_unit_string(downloaded_size)}, " \
-                             f"{curr_speed_str})"
+                             f"{curr_speed_str}, " \
+                             f"~{remainTimeStr}s remains)"
                 console_print(dl_msg, end="\x1b[0K\r")
     if file_size is not None and file_size != downloaded_size:
         info_print(PColor.WARNING("WARNING: ")

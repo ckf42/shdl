@@ -162,6 +162,32 @@ _parser.add_argument(
          "Accepted value: doi, arxiv, ieee, jstor, pmid, sciencedirect"
 )
 _parser.add_argument(
+    "--pem",
+    type=str,
+    help="The path to a pem file used for verifying SSL connections. "
+    "This is used to circumvent the issue that certifi used by requests "
+    "may not be up-to-date. "
+    "Note that this may lead to vulnerability if malicious file is used. "
+    "Only use this if you understand the consequences. "
+)
+_parser.add_argument(
+    "--insecure", "-k",
+    action='store_true',
+    help="Not to verify SSL at all. Effectively accepting all cert or using only http. "
+    "If --pem is specified (even if invalid), then --insecure is ignored. "
+    "Only use this if you understand the consequences. "
+)
+_parser.add_argument(
+    "--nometa",
+    action='store_true',
+    help="Do not check metadata for identifier validity. "
+    "Disables --autoname and requires --type. "
+    "Cannot be specified together with --metaonly. "
+    "Will still make requests to metadata sites, only that the responses are discarded. "
+    "If identifier is invalid, behavior is undefined. "
+    "Only use this if you make sure that the identifier is valid"
+)
+_parser.add_argument(
     "--verbose", "-v",
     action='count',
     default=0,

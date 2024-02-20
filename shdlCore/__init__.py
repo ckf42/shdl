@@ -28,13 +28,14 @@ def main():
     info_print(f"Sanitized identifier: {PColor.PATH(repo_obj.identifier)}")
 
     # check metadata
-    console_print("Metadata response: ", msg_verbose_level=VerboseLevel.DEBUG)
-    if not repo_obj.is_meta_response_valid:
-        quit_with_error(ErrorType.QUERY_INVALID,
-                        error_msg="No metadata found")
-    for _k, _v in repo_obj.metadata.items():
-        console_print(PColor.INFO(_k) + ": " + str(_v),
-                      msg_verbose_level=VerboseLevel.DEBUG)
+    if not cliArg['nometa']:
+        console_print("Metadata response: ", msg_verbose_level=VerboseLevel.DEBUG)
+        if not repo_obj.is_meta_response_valid:
+            quit_with_error(ErrorType.QUERY_INVALID,
+                            error_msg="No metadata found")
+        for _k, _v in repo_obj.metadata.items():
+            console_print(PColor.INFO(_k) + ": " + str(_v),
+                        msg_verbose_level=VerboseLevel.DEBUG)
 
     # patch autoname
     proposed_name = cliArg['output']
