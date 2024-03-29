@@ -75,7 +75,7 @@ def _download_file_to_local(target_url: str,
         accum_time: float = 0.0
         accum_size: float = 0.0
         curr_speed: float = 0.0
-        curr_speed_str: str = 'infinite B/s'
+        curr_speed_str: str = '? B/s'
         checkpt_time: float = monotonic()
         download_init_time: float = checkpt_time
         with local_file_handle:
@@ -98,14 +98,14 @@ def _download_file_to_local(target_url: str,
                              + human_byte_unit_string(downloaded_size) \
                              + f" ({curr_speed_str})"
                 else:
-                    remainTimeStr: str = 'infinite s' \
+                    remainTimeStr: str = 'infinite ' \
                             if curr_speed == 0.0 \
                             else f"{(file_size - downloaded_size) / curr_speed:.2f}"
                     dl_msg = "Download " \
                              f"{downloaded_size / file_size * 100 :.2f}% " \
                              f"({human_byte_unit_string(downloaded_size)}, " \
                              f"{curr_speed_str}, " \
-                             f"~{remainTimeStr}s remains)"
+                             f"est. {remainTimeStr}s remains)"
                 console_print(dl_msg, end="\x1b[0K\r")
     if file_size is not None and file_size != downloaded_size:
         info_print(PColor.WARNING("WARNING: ")

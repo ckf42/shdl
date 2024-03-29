@@ -172,7 +172,7 @@ def autoname_patcher(metadata_dict: dict,
         'title':             doc_titlecase,
         'title_':            '_'.join(title_capitalized),
         'titleCamel':        ''.join(title_capitalized),
-        'identifier':        metadata_dict['id'].replace('/', '@'),
+        'identifier':        sub(r'[/:<|>\\]', '@', metadata_dict['id']),
         'year':              metadata_dict['year'],
         'year2':             metadata_dict['year'][-2:],
     }

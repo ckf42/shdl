@@ -262,7 +262,12 @@ cliArg['rqKwargs'] = {
 }
 info_print("Testing network connectivity ...")
 try:
-    rq.get('http://example.com/', **cliArg['rqKwargs'])
+    checkRes = rq.get('http://example.com/', **cliArg['rqKwargs'])
+    if not checkRes.content.startswith(
+            b'<!doctype html>\n<html>\n<head>\n    '
+            b'<title>Example Domain</title>\n\n    '
+            b'<meta charset="utf-8" />'):
+        raise rq.ConnectionError("Content mismatches")
 except rq.exceptions.ProxyError:
     quit_with_error(ErrorType.ARG_INVALID,
                     error_msg="Proxy config is invalid")
