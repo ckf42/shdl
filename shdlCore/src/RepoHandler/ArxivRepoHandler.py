@@ -11,7 +11,7 @@ from ._BaseRepoHandler import _BaseRepoHandler
 class ArxivRepoHandler(_BaseRepoHandler):
     repo_name = "arXiv"
     query_extract_pattern \
-        = r'^(https?://)?arxiv(\.org/(abs|pdf)/|:)?\s*(.+)(\.pdf)?$'
+        = r'^(https?://(?:www\.)?)?arxiv(\.org/(abs|pdf)/|:)?\s*(.+)(?:v\d+)?(\.pdf)?$'
     mirror_list = ('https://arxiv.org/pdf/',)
 
     @classmethod
@@ -20,7 +20,10 @@ class ArxivRepoHandler(_BaseRepoHandler):
                             raw_query_str,
                             flags=IGNORECASE)
         if match_gp:
-            return match_gp.group(4)
+            gpiden = match_gp.group(4)
+            console_print(f"Parsed identifier: {gpiden}",
+                          msg_verbose_level=VerboseLevel.VERBOSE)
+            return gpiden
         else:
             console_print(f"{PColor.WARNING('Failed')} parsing identifier as "
                           f"type {PColor.INFO(cls.repo_name)}",
