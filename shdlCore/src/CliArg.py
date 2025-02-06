@@ -82,8 +82,7 @@ _parser.add_argument(
          "on the website, "
          "try changing this. "
          "Default: "
-         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; "
-         "rv:78.0) Gecko/20100101 Firefox/78.0"
+         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125"
 )
 _parser.add_argument(
     "--autoname",
@@ -183,9 +182,15 @@ _parser.add_argument(
     help="Do not check metadata for identifier validity. "
     "Disables --autoname and requires --type. "
     "Cannot be specified together with --metaonly. "
-    "Will still make requests to metadata sites, only that the responses are discarded. "
+    "Will still make requests to metadata sites, "
+    "only that the responses are discarded. "
     "If identifier is invalid, behavior is undefined. "
     "Only use this if you make sure that the identifier is valid"
+)
+_parser.add_argument(
+    "--overwrite", "-f",
+    action='store_true',
+    help="Force overwrite file even if file with same name already exists"
 )
 _parser.add_argument(
     "--verbose", "-v",

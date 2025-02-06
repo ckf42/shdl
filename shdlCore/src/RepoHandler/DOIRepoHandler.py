@@ -123,6 +123,7 @@ class DOIRepoHandler(_BaseRepoHandler):
             info_print(PColor.ERROR("Error:"), end=" ")
             info_print("Response does not have enough metadata. "
                        "Please report this DOI as a bug")
+            alt_metadata = dict()
         return alt_metadata
 
     def get_download_url(
@@ -168,8 +169,9 @@ class DOIRepoHandler(_BaseRepoHandler):
             return None
         except rq.exceptions.ConnectionError as e:
             info_print(PColor.ERROR("ERROR:"), end=" ")
-            if b'ddos' in e.args[0].content:
-                info_print(f"Cannot bypass DDOS-Guard to {mirror_link}")
+            console_print(e.args[0].content, msg_verbose_level=VerboseLevel.DEBUG)
+            if b'ddos' in e.args[0].content or b'challenge' in e.args[0].content:
+                info_print(f"Cannot bypass Guard to {mirror_link}")
             else:
                 info_print(f"Cannot connect to {mirror_link}. "
                            "Maybe it is down (for you)?")

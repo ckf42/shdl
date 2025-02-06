@@ -81,8 +81,7 @@ for _k, _v in cliArg.items():
 
 _defaultDict = {
     # default arguments for arg that may be overridden in shdlconfig
-    'useragent':  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) '
-                  'Gecko/20100101 Firefox/78.0',
+    'useragent':  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125',
     'autoformat': '[{authors}, {repo} {identifier}]{title}',
     'dir':        '.',
     'proxy':      '',
@@ -121,7 +120,8 @@ if cliArg['config'] != '':
             elif lineHeader == 'chunk':
                 # raise ValueError if casting fails
                 configDict['chunk'] = int(lineContent)
-            elif lineHeader in ('autoname', 'nocolor'):
+            elif lineHeader in ('autoname', 'nocolor', 'overwrite'):
+                # boolean
                 configDict[lineHeader] = lineContent = True
             else:
                 isValidHeader = False

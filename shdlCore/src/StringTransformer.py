@@ -96,7 +96,7 @@ _stopword_list = (
     'off', 'on', 'once', 'only', 'or', 'other', 'out', 'over', 'own', 's',
     'same', 'should', 'so', 'some', 'such', 't', 'than', 'that', 'the', 'then',
     'there', 'these', 'this', 'those', 'through', 'to', 'too', 'under',
-    'until', 'up', 'using', 'very', 'was', 'were', 'what', 'when', 'where',
+    'until', 'up', 'using', 'very', 'via', 'was', 'were', 'what', 'when', 'where',
     'which', 'while', 'who', 'whom', 'why', 'will', 'with', 'without',
 )
 

@@ -5,6 +5,8 @@ from time import monotonic
 
 from .CommonUtil import *
 
+def is_file_exist(targetPathObj: Path) -> bool:
+    return targetPathObj.is_file()
 
 def _get_local_file_write_handler(
         write_path_obj: Path) -> Union[bool, BinaryIO]:

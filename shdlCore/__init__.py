@@ -69,7 +69,11 @@ def main():
                 # check validity later when dl link is fetched
                 # as ext is yet not known
                 console_print("Proposed name: " + PColor.PATH(proposed_name),
-                              msg_verbose_level=VerboseLevel.VERBOSE)
+                              msg_verbose_level=(
+                                  VerboseLevel.PRINT
+                                  if cliArg['metaonly']
+                                  else
+                                  VerboseLevel.VERBOSE))
 
     # metaonly early break
     if cliArg['metaonly']:
@@ -102,6 +106,9 @@ def main():
             proposed_name + '.' + dl_url.rsplit('.', 1)[-1])
     console_print("Download path: " + PColor.PATH(str(download_path)),
                   msg_verbose_level=VerboseLevel.VERBOSE)
+    if not cliArg['overwrite'] and is_file_exist(download_path):
+        quit_with_error(ErrorType.OUTPUT_ERROR,
+                        error_msg="File with same name already exists")
     if not fetch_url_to_local_path(dl_url, download_path):
         quit_with_error(ErrorType.OUTPUT_ERROR,
                         error_msg="Failed to download file ")
